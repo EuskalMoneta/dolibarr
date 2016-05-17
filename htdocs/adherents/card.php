@@ -45,6 +45,8 @@ $langs->load("bills");
 $langs->load("members");
 $langs->load("users");
 $langs->load('other');
+// PATCH ASSO
+$langs->load('asso_lien');
 
 $action=GETPOST('action','alpha');
 $cancel=GETPOST('cancel');
@@ -54,6 +56,9 @@ $rowid=GETPOST('rowid','int');
 $typeid=GETPOST('typeid','int');
 $userid=GETPOST('userid','int');
 $socid=GETPOST('socid','int');
+
+// PATCH ASSO
+$assoid=GETPOST('assoid','int');
 
 if (! empty($conf->mailmanspip->enabled))
 {
@@ -180,6 +185,16 @@ if (empty($reshook))
 					$action='';
 				}
 			}
+		}
+	}
+
+	// PATCH ASSO
+	if ($action == 'setassoid')
+	{
+		if ($assoid != $object->fk_asso)	// If link differs from currently in database
+		{
+			$result=$object->setAssoId($assoid);
+			if ($result < 0) dol_print_error($object->db,$object->error);
 		}
 	}
 
@@ -457,6 +472,8 @@ if (empty($reshook))
 
 		$userid=$_POST["userid"];
 		$socid=$_POST["socid"];
+		// PATCH ASSO
+		$assoid=$_POST["assoid"];
 
 		$object->civility_id = $civility_id;
 		$object->firstname   = $firstname;
@@ -481,6 +498,8 @@ if (empty($reshook))
 		$object->morphy      = $morphy;
 		$object->user_id     = $userid;
 		$object->fk_soc      = $socid;
+		// PATCH ASSO
+		$object->fk_asso     = $assoid;
 		$object->public      = $public;
 
 		// Fill array 'array_options' with data from add form
@@ -1545,6 +1564,47 @@ else
 				else
 				{
 					print $langs->trans("NoThirdPartyAssociatedToMember");
+				}
+			}
+			print '</td></tr>';
+		}
+
+		// PATCH ASSO
+		// Lien Asso 3%
+		if (! empty($conf->societe->enabled))
+		{
+			print '<tr><td>';
+			print '<table class="nobordernopadding" width="100%"><tr><td>';
+			print $langs->trans("LienVersAsso");
+			print '</td>';
+			if ($action != 'editassolien' && $user->rights->adherent->creer) print '<td align="right"><a href="'.$_SERVER["PHP_SELF"].'?action=editassolien&amp;rowid='.$object->id.'">'.img_edit($langs->trans('LienVersAsso'),1).'</a></td>';
+			print '</tr></table>';
+			print '</td><td colspan="2" class="valeur">';
+			if ($action == 'editassolien')
+			{
+				$htmlname='assoid';
+				print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'" name="form'.$htmlname.'">';
+				print '<input type="hidden" name="rowid" value="'.$object->id.'">';
+				print '<input type="hidden" name="action" value="set'.$htmlname.'">';
+				print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
+				print '<table class="nobordernopadding" cellpadding="0" cellspacing="0">';
+				print '<tr><td>';
+				print $form->select_company($object->fk_asso,'assoid','',1);
+				print '</td>';
+				print '<td align="left"><input type="submit" class="button" value="'.$langs->trans("Modify").'"></td>';
+				print '</tr></table></form>';
+			}
+			else
+			{
+				if ($object->fk_asso)
+				{
+					$company=new Societe($db);
+					$result=$company->fetch($object->fk_asso);
+					print $company->getNomUrl(1);
+				}
+				else
+				{
+					print $langs->trans("AucunAssociationChoisie");
 				}
 			}
 			print '</td></tr>';
