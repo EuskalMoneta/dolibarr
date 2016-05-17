@@ -1,8 +1,8 @@
 # Dolibarr language file - Source file is en_US - commercial
 Commercial=Commercial
 CommercialArea=Espace commercial
-Customer=Client
-Customers=Clients
+Customer=Prestataire agréé
+Customers=Prestataires agréés
 Prospect=Prospect
 Prospects=Prospects
 DeleteAction=Supprimer l'évènement
