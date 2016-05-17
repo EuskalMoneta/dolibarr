@@ -369,7 +369,7 @@ $Number=array();
 $tot=0;
 $numb=0;
 
-$sql = "SELECT c.cotisation, c.dateadh as dateh";
+$sql = "SELECT c.cotisation, c.dateadh as dateh, c.datef";
 $sql.= " FROM ".MAIN_DB_PREFIX."adherent as d, ".MAIN_DB_PREFIX."cotisation as c";
 $sql.= " WHERE d.entity IN (".getEntity().")";
 $sql.= " AND d.rowid = c.fk_adherent";
@@ -385,7 +385,7 @@ if ($result)
 	while ($i < $num)
 	{
 		$objp = $db->fetch_object($result);
-		$year=dol_print_date($db->jdate($objp->dateh),"%Y");
+		$year=dol_print_date($db->jdate($objp->datef),"%Y");
 		$Total[$year]=(isset($Total[$year])?$Total[$year]:0)+$objp->cotisation;
 		$Number[$year]=(isset($Number[$year])?$Number[$year]:0)+1;
 		$tot+=$objp->cotisation;
