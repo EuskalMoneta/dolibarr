@@ -1450,3 +1450,65 @@ function show_subsidiaries($conf,$langs,$db,$object)
 	return $i;
 }
 
+
+// PATCH ASSO
+/**
+ * 		Show html area for list of associations
+ *
+ *		@param	Conf		$conf		Object conf
+ * 		@param	Translate	$langs		Object langs
+ * 		@param	DoliDB		$db			Database handler
+ * 		@param	Societe		$object		Third party object
+ * 		@return	void
+ */
+function show_asso($conf,$langs,$db,$object)
+{
+	global $user;
+	global $bc;
+
+	$i=-1;
+
+	$sql = "SELECT a.rowid, a.login, a.lastname, a.firstname";
+	$sql.= " FROM ".MAIN_DB_PREFIX."adherent as a";
+	$sql.= " WHERE a.fk_asso = ".$object->id;
+	$sql.= " ORDER BY a.lastname, a.firstname";
+
+	$result = $db->query($sql);
+	$num = $db->num_rows($result);
+
+	if ($num)
+	{
+		$adhstatic = new Adherent($db);
+
+		print_titre($langs->trans("Parrains") . ' (' . $num . ')');
+		print "\n".'<table class="noborder" width="100%">'."\n";
+
+		print '<tr class="liste_titre"><td>'.$langs->trans("Member").'</td></tr>';
+
+		$i=0;
+		while ($i < $num)
+		{
+			$obj = $db->fetch_object($result);
+			$var = !$var;
+
+			print "<tr ".$bc[$var].">";
+
+			print '<td>';
+			$adhstatic->id = $obj->rowid;
+			$adhstatic->lastname = $obj->lastname;
+			$adhstatic->firstname = $obj->firstname;
+			$adhstatic->ref = $adhstatic->getFullName($langs);
+			print $adhstatic->getNomUrl(1).' '.($obj->login?"(".$obj->login.")":"");
+			print '</td>';
+
+			print "</tr>\n";
+			$i++;
+		}
+		print "\n</table>\n";
+	}
+
+	print "<br>\n";
+
+	return $i;
+}
+

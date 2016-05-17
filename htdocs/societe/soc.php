@@ -2551,6 +2551,10 @@ else
 	        	$result=show_addresses($conf,$langs,$db,$object,$_SERVER["PHP_SELF"].'?socid='.$object->id);
 	        }
 		}
+
+        // PATCH ASSO
+        // Associations list
+        $result=show_asso($conf,$langs,$db,$object);
     }
 
 }
