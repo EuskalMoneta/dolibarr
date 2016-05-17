@@ -1713,6 +1713,44 @@ class Societe extends CommonObject
         }
     }
 
+    // PATCH LIEN FOURNISSEURS
+    /**
+     *  Return array of suppliers
+     *
+     *  @param	User	$user		Object user
+     *  @return array       		Array of suppliers of third party
+     */
+    function getFournisseurs($user='')
+    {
+        global $conf;
+
+        $reparray=array();
+
+        $sql = "SELECT s.rowid, s.nom";
+        $sql.= " FROM ".MAIN_DB_PREFIX."societe_fournisseurs as sf, ".MAIN_DB_PREFIX."societe as s";
+        $sql.= " WHERE s.rowid = sf.fk_fournisseur AND sf.fk_soc =".$this->id;
+        $sql.= " AND entity in (0, ".$conf->entity.")";
+
+        $resql = $this->db->query($sql);
+        if ($resql)
+        {
+            $num = $this->db->num_rows($resql);
+            $i=0;
+            while ($i < $num)
+            {
+                $obj = $this->db->fetch_object($resql);
+                $reparray[$i]['id']=$obj->rowid;
+                $reparray[$i]['name']=$obj->nom;
+                $i++;
+            }
+            return $reparray;
+        }
+        else {
+            dol_print_error($this->db);
+            return -1;
+        }
+    }
+
     /**
      * Set the price level
      *
@@ -1794,6 +1832,56 @@ class Societe extends CommonObject
             if (! $this->db->query($sql) )
             {
                 dol_syslog(get_class($this)."::del_commercial Erreur");
+            }
+        }
+    }
+
+    // PATCH LIEN FOURNISSEURS
+    /**
+     *	Add link to supplier
+     *
+     *	@param	User	$user		Object user
+     *	@param	int		$fourid		Id of supplier
+     *	@return	void
+     */
+    function add_fournisseur($user, $fourid)
+    {
+        if ($this->id > 0 && $fourid > 0)
+        {
+            $sql = "DELETE FROM  ".MAIN_DB_PREFIX."societe_fournisseurs";
+            $sql.= " WHERE fk_soc = ".$this->id." AND fk_fournisseur =".$fourid;
+
+            $this->db->query($sql);
+
+            $sql = "INSERT INTO ".MAIN_DB_PREFIX."societe_fournisseurs";
+            $sql.= " ( fk_soc, fk_fournisseur )";
+            $sql.= " VALUES (".$this->id.",".$fourid.")";
+
+            if (! $this->db->query($sql) )
+            {
+                dol_syslog(get_class($this)."::add_fournisseur Erreur");
+            }
+        }
+    }
+
+    // PATCH LIEN FOURNISSEURS
+    /**
+     *	Del link to supplier
+     *
+     *	@param	User	$user		Object user
+     *	@param	int		$fourid		Id of supplier
+     *	@return	void
+     */
+    function del_fournisseur($user, $fourid)
+    {
+        if ($this->id > 0 && $fourid > 0)
+        {
+            $sql  = "DELETE FROM  ".MAIN_DB_PREFIX."societe_fournisseurs ";
+            $sql .= " WHERE fk_soc = ".$this->id." AND fk_fournisseur =".$fourid;
+
+            if (! $this->db->query($sql) )
+            {
+                dol_syslog(get_class($this)."::del_fournisseur Erreur");
             }
         }
     }

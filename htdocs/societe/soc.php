@@ -53,6 +53,9 @@ if (! empty($conf->categorie->enabled)) $langs->load("categories");
 if (! empty($conf->incoterm->enabled)) $langs->load("incoterm");
 if (! empty($conf->notification->enabled)) $langs->load("mails");
 
+// PATCH LIEN FOURNISSEURS
+$langs->load("fournisseur");
+
 $mesg=''; $error=0; $errors=array();
 
 $action		= (GETPOST('action') ? GETPOST('action') : 'view');
@@ -2309,6 +2312,10 @@ else
         // Sales representative
         include DOL_DOCUMENT_ROOT.'/societe/tpl/linesalesrepresentative.tpl.php';
 
+        // PATCH LIEN FOURNISSEURS
+        // Suppliers
+        include DOL_DOCUMENT_ROOT.'/societe/tpl/linesuppliers.tpl.php';
+
         // Module Adherent
         if (! empty($conf->adherent->enabled))
         {
@@ -2538,6 +2545,10 @@ else
 
 	        // Subsidiaries list
 	        $result=show_subsidiaries($conf,$langs,$db,$object);
+
+	        // PATCH LIEN FOURNISSEURS
+	        // Customers list
+	        $result=show_customers($conf,$langs,$db,$object);
 
 	        // Contacts list
 	        if (empty($conf->global->SOCIETE_DISABLE_CONTACTS))
