@@ -87,24 +87,27 @@ function ecrit_prestataire($fp, $p, $annuaire_pdf)
 		fwrite($fp, "\n");
 	}
 
-	if ($p->adresse_dans_annuaire == 1 && $p->address != "") {
+	if (/*$p->adresse_dans_annuaire == 1 && */$p->address != "") {
 		fwrite($fp, $p->address."\n");
 	}
 
 	fwrite($fp, $p->zip.' '.$p->town."\n");
 
-	if ($p->tel_dans_annuaire == 1) {
+	/*if ($p->tel_dans_annuaire == 1) {*/
+		$telephone = "";
 		if($p->phone != "") {
-			fwrite($fp, $p->phone);
+			$telephone = $p->phone;
 		}
 		if($p->phone != "" && $p->telephone2 != "") {
-			fwrite($fp, ", ");
+			$telephone .= ", ";
 		}
 		if($p->telephone2 != "") {
-			fwrite($fp, $p->telephone2);
+			$telephone .= $p->telephone2;
 		}
-		fwrite($fp, "\n");
-	}
+		if ($telephone != "") {
+			fwrite($fp, $telephone."\n");
+		}
+	/*}*/
 
 	if ($p->url != "") {
 		if (!$annuaire_pdf) { fwrite($fp, '<a href="http://'.$p->url.'" target="_blank">'); }
@@ -113,7 +116,7 @@ function ecrit_prestataire($fp, $p, $annuaire_pdf)
 		fwrite($fp, "\n");
 	}
 
-	if ($p->email_dans_annuaire == 1 && $p->email != "") {
+	if (/*$p->email_dans_annuaire == 1 && */$p->email != "") {
 		fwrite($fp, $p->email."\n");
 	}
 
@@ -225,8 +228,69 @@ $db->begin();
 
 require_once 'prestataire.class.php';
 
-// récupérer la liste des prestataires agréés en activité
-$prestataires = array();
+/**
+ * Classe qui représente l'adresse d'activité d'un prestataire.
+ * Cette classe offre la même interface que la classe Prestataire,
+ * ce qui permet de l'utiliser dans le code partout où la classe
+ * Prestataire est utilisée, sans faire de modification.
+ */
+class AdresseActivite extends ContactPrestataire
+{
+	public $name;
+	public $url;
+	public $description_eu;
+	public $description_fr;
+	public $horaires_eu;
+	public $horaires_fr;
+	public $autres_lieux_activite_eu;
+	public $autres_lieux_activite_fr;
+	private $pays_basque_au_coeur;
+	public $categorie_annuaire;
+	public $categorie_annuaire_eu;
+	public $categorie_annuaire_fr;
+	public $phone;
+	public $telephone2;
+
+	function __construct($db, $prestataire, $contact)
+	{
+		parent::__construct($db);
+
+		// recopie des champs de l'objet prestataire dont nous avons besoin
+		$this->name = $prestataire->name;
+		$this->url = $prestataire->url;
+		$this->description_eu = $prestataire->description_eu;
+		$this->description_fr = $prestataire->description_fr;
+		$this->horaires_eu = $prestataire->horaires_eu;
+		$this->horaires_fr = $prestataire->horaires_fr;
+		$this->autres_lieux_activite_eu = $prestataire->autres_lieux_activite_eu;
+		$this->autres_lieux_activite_fr = $prestataire->autres_lieux_activite_fr;
+		$this->pays_basque_au_coeur = $prestataire->estPaysBasqueAuCoeur();
+		$this->categorie_annuaire = $prestataire->categorie_annuaire;
+		$this->categorie_annuaire_eu = $prestataire->categorie_annuaire_eu;
+		$this->categorie_annuaire_fr = $prestataire->categorie_annuaire_fr;
+
+		// recopies des champs du contact dont nous avons besoin
+		$this->address = $contact->address;
+		$this->zip = $contact->zip;
+		$this->town = $contact->town;
+		$this->email = $contact->email;
+		$this->commune_eu = $contact->commune_eu;
+		$this->commune_fr = $contact->commune_fr;
+
+		// recopie de certains champs pour qu'ils aient le même nom que dans l'objet prestataire
+		$this->phone = $contact->phone_pro;
+		$this->telephone2 = $contact->phone_mobile;
+	}
+
+	function estPaysBasqueAuCoeur()
+	{
+		return $this->pays_basque_au_coeur;
+	}
+
+}
+
+// récupérer la liste des adresses d'activité des prestataires agréés en activité
+$adresses_activite = array();
 
 $sql = "SELECT rowid";
 $sql.= " FROM ".MAIN_DB_PREFIX."societe";
@@ -251,7 +315,11 @@ if ($resql)
 				if ($result < 0) { $error; dol_print_error($db,$prest->error); }
 				else {
 					//if (preg_match('/^2014-09/', $prest->date_agrement))
-					$prestataires[] = $prest;
+					dol_syslog("Prestataire : '".$prest->name." - ".$prest->town."'", LOG_DEBUG);
+					foreach ($prest->adresses_activite as $contact) {
+						dol_syslog("Contact du prestataire : '".$contact->lastname." - ".$prest->town."'", LOG_DEBUG);
+						$adresses_activite[] = new AdresseActivite($db, $prest, $contact);
+					}
 				}
 			}
 			$i++;
@@ -265,7 +333,7 @@ else
 }
 
 // tri de la liste des prestataires par communes
-usort($prestataires, "cmp_par_commune_categorie_nom");
+usort($adresses_activite, "cmp_par_commune_categorie_nom");
 
 // écriture du fichier "annuaire par communes"
 if ($annuaire_pdf) {
@@ -286,7 +354,7 @@ if ($annuaire_pdf) {
 
 $commune_precedente = "";
 $categorie_precedente = "";
-foreach ($prestataires as $p) {
+foreach ($adresses_activite as $p) {
 	if (strcasecmp($p->commune_fr, $commune_precedente) != 0) {
 		ecrit_commune($fp, $p, $annuaire_pdf, 1);
 		// on change de commune donc on force l'affichage du nom de la catégorie
@@ -334,7 +402,7 @@ if ($annuaire_pdf) {
 }
 
 // tri de la liste des prestataires par catégories
-usort($prestataires, "cmp_par_categorie_commune_nom");
+usort($adresses_activite, "cmp_par_categorie_commune_nom");
 
 // écriture du fichier "annuaire par catégories"
 if ($annuaire_pdf) {
@@ -349,7 +417,7 @@ if (!$annuaire_pdf) {
 
 $commune_precedente = "";
 $categorie_precedente = "";
-foreach ($prestataires as $p) {
+foreach ($adresses_activite as $p) {
 	if (strcmp($p->categorie_annuaire, $categorie_precedente) != 0) {
 		ecrit_categorie($fp, $p, $annuaire_pdf, 1);
 		// on change de catégorie donc on force l'affichage du nom de la commune
