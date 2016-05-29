@@ -5,20 +5,76 @@
  */
 
 require_once DOL_DOCUMENT_ROOT.'/societe/class/societe.class.php';
+require_once DOL_DOCUMENT_ROOT.'/contact/class/contact.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
 require_once DOL_DOCUMENT_ROOT.'/categories/class/categorie.class.php';
+
+
+function clean_html_string($str)
+{
+	$str = strip_tags($str);
+	$str = html_entity_decode($str, ENT_QUOTES, 'UTF-8');
+	$str = trim($str);
+	$str = str_replace("\r\n", "\n", $str);
+	return $str;
+}
+
+
+/**
+ *  Classe représentant un contact d'un prestataire d'Euskal Moneta
+ */
+class ContactPrestataire extends Contact
+{
+	public $commune_eu;
+	public $commune_fr;
+	public $latitude;
+	public $longitude;
+
+	/**
+	 * Constructor
+	 *
+	 * @param DoliDB $db    Database handler
+	 */
+	function __construct($db)
+	{
+		parent::__construct($db);
+	}
+
+	function fetch($rowid)
+	{
+		parent::fetch($rowid);
+
+		$this->address = clean_html_string($this->address);
+
+		$tab = explode("/", $this->town);
+		if (count($tab) === 2) {
+			$this->commune_eu = trim($tab[0]);
+			$this->commune_fr = trim($tab[1]);
+		} else {
+			$this->commune_eu = NULL;
+			$this->commune_fr = $this->town;
+		}
+
+		// liste des champs personnalisés des fiches Contact
+		$extrafields = new ExtraFields($this->db);
+		$extralabels = $extrafields->fetch_name_optionals_label('socpeople');
+		$result = $this->fetch_optionals($this->id, $extralabels);
+		if ($result < 0) {
+			$error; dol_print_error($this->db,$this->error);
+		} else {
+			$this->latitude = $this->array_options['options_latitude'];
+			$this->longitude = $this->array_options['options_longitude'];
+		}
+	}
+
+}
 
 /**
  *  Classe représentant un prestataire d'Euskal Moneta
  */
 class Prestataire extends Societe
 {
-	public $commune_eu;
-	public $commune_fr;
 	private $niveau_euskara;
-	private $raison_sociale;
-	private $latitude;
-	private $longitude;
 	public $description_eu;
 	public $description_fr;
 	public $horaires_eu;
@@ -30,14 +86,11 @@ class Prestataire extends Societe
 	public $categorie_annuaire;
 	public $categorie_annuaire_eu;
 	public $categorie_annuaire_fr;
-	public $adresse_dans_annuaire;
-	public $email_dans_annuaire;
-	public $tel_dans_annuaire;
-	public $telephone2;
 	public $date_agrement;
 	public $activites;
 	public $etiquettes;
 	private $url_photo;
+	public $adresses_activite;
 
 	/**
 	 * Constructor
@@ -52,36 +105,18 @@ class Prestataire extends Societe
 		$this->pays_basque_au_coeur = FALSE;
 		$this->activites = array();
 		$this->etiquettes = array();
-	}
-
-	private function clean_html_string($str)
-	{
-		$str = strip_tags($str);
-		$str = html_entity_decode($str, ENT_QUOTES, 'UTF-8');
-		$str = trim($str);
-		$str = str_replace("\r\n", "\n", $str);
-		return $str;
+		$this->adresses_activite = array();
 	}
 
 	function fetch($rowid)
 	{
 		parent::fetch($rowid);
 
-		$this->address = $this->clean_html_string($this->address);
+		$this->address = clean_html_string($this->address);
 
 		// FIXME Bidouille pour contourner le fait que la colonne "town" de la table "societe" n'est pas assez grande.
 		if ($this->town === "Mitikile-Larrori-Mendibile / Moncayolle-Larrory-Me") {
 			$this->town = "Mitikile-Larrori-Mendibile / Moncayolle-Larrory-Mendibieu";
-		}
-
-		$this->commune_fr = $p->town;
-		$tab = explode("/", $this->town);
-		if (count($tab) === 2) {
-			$this->commune_eu = trim($tab[0]);
-			$this->commune_fr = trim($tab[1]);
-		} else {
-			$this->commune_eu = NULL;
-			$this->commune_fr = $this->town;
 		}
 
 		// liste des champs personnalisés des fiches Tiers
@@ -92,19 +127,12 @@ class Prestataire extends Societe
 			$error; dol_print_error($this->db,$this->error);
 		} else {
 			$this->niveau_euskara = $this->array_options['options_euskara'];
-			$this->raison_sociale = $this->array_options['options_DJ'];
-			$this->latitude = $this->array_options['options_LAT'];
-			$this->longitude = $this->array_options['options_LONGI'];
-			$this->description_eu = $this->clean_html_string($this->array_options['options_description_euskara']);
-			$this->description_fr = $this->clean_html_string($this->array_options['options_description_francais']);
-			$this->horaires_eu = $this->clean_html_string($this->array_options['options_horaires_euskara']);
-			$this->horaires_fr = $this->clean_html_string($this->array_options['options_horaires_francais']);
-			$this->autres_lieux_activite_eu = $this->clean_html_string($this->array_options['options_autres_lieux_activite_euskara']);
-			$this->autres_lieux_activite_fr = $this->clean_html_string($this->array_options['options_autres_lieux_activite_francais']);
-			$this->adresse_dans_annuaire = $this->array_options['options_adresse_dans_annuaire'];
-			$this->email_dans_annuaire = $this->array_options['options_email_dans_annuaire'];
-			$this->tel_dans_annuaire = $this->array_options['options_tel_dans_annuaire'];
-			$this->telephone2 = $this->array_options['options_telephone2'];
+			$this->description_eu = clean_html_string($this->array_options['options_description_euskara']);
+			$this->description_fr = clean_html_string($this->array_options['options_description_francais']);
+			$this->horaires_eu = clean_html_string($this->array_options['options_horaires_euskara']);
+			$this->horaires_fr = clean_html_string($this->array_options['options_horaires_francais']);
+			$this->autres_lieux_activite_eu = clean_html_string($this->array_options['options_autres_lieux_activite_euskara']);
+			$this->autres_lieux_activite_fr = clean_html_string($this->array_options['options_autres_lieux_activite_francais']);
 			$this->date_agrement = $this->array_options['options_date_agrement'];
 			$this->url_photo = $this->array_options['options_photo'];
 		}
@@ -116,7 +144,7 @@ class Prestataire extends Societe
 		//  - les catégories pour l'annuaire
 		//  - les étiquettes
 		$categorie = new Categorie($this->db);
-		$categories = $categorie->containing($this->id, 2);
+		$categories = $categorie->containing($this->id, 'customer');
 		foreach ($categories as $cat) {
 			if (strpos($cat->label, 'Ambassadeur') !== FALSE) {
 				// on ignore les catégories "Ambassadeur"
@@ -148,6 +176,24 @@ class Prestataire extends Societe
 				}
 			}
 		}
+
+		// charge la liste des contacts de ce prestataire
+		// pour chaque contact, s'il a le tag "Adresse d'activité", on le garde, sinon on l'ignore
+		$contacts = $this->contact_array();
+		foreach ($contacts as $contact_id => $contact_label) {
+			$contact = new ContactPrestataire($this->db);
+			$contact->fetch($contact_id);
+
+			// on récupère les catégories/tags de ce contact
+			$c = new Categorie($this->db);
+			$categories = $c->containing($contact->id, 'contact');
+			foreach ($categories as $cat) {
+				if ($cat->label === "Adresse d'activité") {
+					$this->adresses_activite[] = $contact;
+				}
+			}
+
+		}
 	}
 
 	/**
@@ -178,26 +224,6 @@ class Prestataire extends Societe
 	function getNiveauEuskara()
 	{
 		return $this->niveau_euskara;
-	}
-
-	/**
-	 *  Renvoie la latitude des coordonnées GPS du prestataire
-	 *
-	 *  @return float    latitude
-	 */
-	function getLatitude()
-	{
-		return $this->latitude;
-	}
-
-	/**
-	 *  Renvoie la longitude des coordonnées GPS du prestataire
-	 *
-	 *  @return float    longitude
-	 */
-	function getLongitude()
-	{
-		return $this->longitude;
 	}
 
 	/**
