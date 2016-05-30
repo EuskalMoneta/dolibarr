@@ -77,12 +77,29 @@ function ecrit_prestataire($fp, $p, $annuaire_pdf)
 	fwrite($fp, $p->name."\n");
 
 	// description en basque puis description en français (avec un retour à la ligne entre les 2 pour plus de clarté)
-	if ($p->description_eu != "") {
-		fwrite($fp, $p->description_eu."\n");
+	if ($p->description_eu != "" || $p->horaires_eu != "" || $p->autres_lieux_activite_eu != "") {
+		if ($p->description_eu != "") {
+			fwrite($fp, $p->description_eu);
+		}
+		if ($p->horaires_eu != "") {
+			fwrite($fp, "\n".$p->horaires_eu);
+		}
+		if ($p->autres_lieux_activite_eu != "") {
+			fwrite($fp, "\n".$p->autres_lieux_activite_eu);
+		}
+		fwrite($fp, "\n");
 	}
-	if ($p->description_fr != "") {
+	if ($p->description_fr != "" || $p->horaires_fr != "" || $p->autres_lieux_activite_fr != "") {
 		if (!$annuaire_pdf) { fwrite($fp, "<em>"); }
-		fwrite($fp, $p->description_fr);
+		if ($p->description_fr != "") {
+			fwrite($fp, $p->description_fr);
+		}
+		if ($p->horaires_fr != "") {
+			fwrite($fp, "\n".$p->horaires_fr);
+		}
+		if ($p->autres_lieux_activite_fr != "") {
+			fwrite($fp, "\n".$p->autres_lieux_activite_fr);
+		}
 		if (!$annuaire_pdf) { fwrite($fp, "</em>"); }
 		fwrite($fp, "\n");
 	}
