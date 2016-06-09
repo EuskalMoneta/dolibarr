@@ -149,7 +149,9 @@ class Prestataire extends Societe
 			if (strpos($cat->label, 'Ambassadeur') !== FALSE) {
 				// on ignore les catégories "Ambassadeur"
 			} else if ($cat->label === 'Bureau de change') {
+				// FIXME supprimer ce vieux code
 				$this->bureau_de_change = TRUE;
+				$this->etiquettes[] = $cat->id;
 			} else if ($cat->label === 'Pays Basque au Coeur') {
 				// FIXME supprimer ce vieux code
 				$this->pays_basque_au_coeur = TRUE;
