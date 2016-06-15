@@ -66,6 +66,8 @@ $api->r->addAPIClass('Luracast\\Restler\\Explorer');
 $api->r->setSupportedFormats('JsonFormat', 'XmlFormat');
 $api->r->addAuthenticationClass('DolibarrApiAccess','');
 
+$listofapis = array();
+
 $modulesdir = dolGetModulesDirs();
 foreach ($modulesdir as $dir)
 {
@@ -118,7 +120,7 @@ foreach ($modulesdir as $dir)
                                 if (class_exists($classname))
                                 {
                                     dol_syslog("Found API classname=".$classname);    
-                                    $api->r->addAPIClass($classname);
+                                    $listofapis[] = $classname;
                                 }
                             }
                         }
@@ -129,6 +131,14 @@ foreach ($modulesdir as $dir)
     }
 }
 
+// Sort the classes before adding them to Restler. The Restler API Explorer
+// shows the classes in the order they are added and it's a mess if they are
+// not sorted.
+sort($listofapis);
+foreach ($listofapis as $classname)
+{
+    $api->r->addAPIClass($classname);
+}
 
 // TODO If not found, redirect to explorer
 
