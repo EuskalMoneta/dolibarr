@@ -84,6 +84,9 @@ foreach ($modulesdir as $dir)
             {
                 $module = $part = strtolower($reg[1]);
 
+                if ($module == 'adherent') {
+                    $part = 'adherents';
+				}
                 if ($module == 'categorie') {
                     $part = 'categories';
 				}
