@@ -56,7 +56,7 @@ class Users extends DolibarrApi
      * Get a list of users
      *
      * @param string    $login      To filter the users by login
-     * @param string    $name       To filter the users by firstname and lastname
+     * @param string    $name       To filter the users by name (firstname or lastname matching the filter)
      * @param string    $sortfield  Sort field
      * @param string    $sortorder  Sort order
      * @param int       $limit      Limit for list
