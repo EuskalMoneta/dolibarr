@@ -112,6 +112,11 @@ class Prestataire extends Societe
 	{
 		parent::fetch($rowid);
 
+		// Add "http://" at the beginning of the URL if it is missing.
+		if (!empty($this->url) && strpos($this->url, 'http') === FALSE) {
+			$this->url = 'http://'.$this->url;
+		}
+
 		$this->address = clean_html_string($this->address);
 
 		// FIXME Bidouille pour contourner le fait que la colonne "town" de la table "societe" n'est pas assez grande.
