@@ -25,6 +25,8 @@ function clean_html_string($str)
  */
 class ContactPrestataire extends Contact
 {
+	public $adresse_eu;
+	public $adresse_fr;
 	public $commune_eu;
 	public $commune_fr;
 	public $latitude;
@@ -46,8 +48,17 @@ class ContactPrestataire extends Contact
 
 		$this->address = clean_html_string($this->address);
 
+		$tab = explode("/", $this->address);
+		if (count($tab) == 2) {
+			$this->adresse_eu = trim($tab[0]);
+			$this->adresse_fr = trim($tab[1]);
+		} else {
+			$this->adresse_eu = $this->address;
+			$this->adresse_fr = $this->address;
+		}
+
 		$tab = explode("/", $this->town);
-		if (count($tab) === 2) {
+		if (count($tab) == 2) {
 			$this->commune_eu = trim($tab[0]);
 			$this->commune_fr = trim($tab[1]);
 		} else {

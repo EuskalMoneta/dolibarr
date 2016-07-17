@@ -325,103 +325,118 @@ function genereXml($activites, $etiquettes, $villes, $prestataires, $lang)
 	// écriture de la liste de tous les prestataires
 	$elt_prestataires = $xml->createElement('prestataires');
 	foreach ($prestataires as $prestataire) {
-		$elt_prestataire = $xml->createElement('prestataire');
+		foreach ($prestataire->adresses_activite as $adresse_activite) {
+			$elt_prestataire = $xml->createElement('prestataire');
 
-		$elt_id = $xml->createElement('id');
-		$elt_id->nodeValue = $prestataire->id;
-		$elt_prestataire->appendChild($elt_id);
+			$elt_id = $xml->createElement('id');
+			$elt_id->nodeValue = $prestataire->id;
+			$elt_prestataire->appendChild($elt_id);
 
-		$elt_nom = $xml->createElement('nom');
-		$elt_nom->nodeValue = htmlspecialchars($prestataire->name);
-		$elt_prestataire->appendChild($elt_nom);
+			$elt_nom = $xml->createElement('nom');
+			$elt_nom->nodeValue = htmlspecialchars($prestataire->name);
+			$elt_prestataire->appendChild($elt_nom);
 
-		$description = '';
-		if ($lang === EU) {
-			$description = $prestataire->description_eu;
-		} else if ($lang === FR) {
-			$description = $prestataire->description_fr;
+			$description = '';
+			if ($lang === EU) {
+				$description = $prestataire->description_eu;
+			} else if ($lang === FR) {
+				$description = $prestataire->description_fr;
+			}
+			$elt_description = $xml->createElement('description');
+			$elt_description->nodeValue = htmlspecialchars($description);
+			$elt_prestataire->appendChild($elt_description);
+
+			$horaires = '';
+			if ($lang === EU) {
+				$horaires = $prestataire->horaires_eu;
+			} else if ($lang === FR) {
+				$horaires = $prestataire->horaires_fr;
+			}
+			$elt_horaires = $xml->createElement('horaires');
+			$elt_horaires->nodeValue = htmlspecialchars($horaires);
+			$elt_prestataire->appendChild($elt_horaires);
+
+			$autres_lieux_activite = '';
+			if ($lang === EU) {
+				$autres_lieux_activite = $prestataire->autres_lieux_activite_eu;
+			} else if ($lang === FR) {
+				$autres_lieux_activite = $prestataire->autres_lieux_activite_fr;
+			}
+			$elt_autres_lieux_activite = $xml->createElement('autres_lieux_activite');
+			$elt_autres_lieux_activite->nodeValue = htmlspecialchars($autres_lieux_activite);
+			$elt_prestataire->appendChild($elt_autres_lieux_activite);
+
+			if ($lang === EU) {
+				$adresse = $adresse_activite->adresse_eu."\n"
+					.$adresse_activite->zip.' '.$adresse_activite->commune_eu;
+			} else if ($lang === FR) {
+				$adresse = $adresse_activite->adresse_fr."\n"
+					.$adresse_activite->zip.' '.$adresse_activite->commune_fr;
+			}
+			$elt_adresse = $xml->createElement('adresse');
+			$elt_adresse->nodeValue = htmlspecialchars($adresse);
+			$elt_prestataire->appendChild($elt_adresse);
+
+			$elt_longitude = $xml->createElement('longitude');
+			$elt_longitude->nodeValue = $adresse_activite->longitude;
+			$elt_prestataire->appendChild($elt_longitude);
+
+			$elt_latitude = $xml->createElement('latitude');
+			$elt_latitude->nodeValue = $adresse_activite->latitude;
+			$elt_prestataire->appendChild($elt_latitude);
+
+			$elt_telephone = $xml->createElement('telephone');
+			if (!empty($adresse_activite->phone_pro)) {
+				$elt_telephone->nodeValue = $adresse_activite->phone_pro;
+			}
+			$elt_prestataire->appendChild($elt_telephone);
+
+			$elt_telephone2 = $xml->createElement('telephone2');
+			if (!empty($adresse_activite->phone_mobile)) {
+				$elt_telephone2->nodeValue = $adresse_activite->phone_mobile;
+			}
+			$elt_prestataire->appendChild($elt_telephone2);
+
+			$elt_email = $xml->createElement('email');
+			if (!empty($adresse_activite->email)) {
+				$elt_email->nodeValue = $adresse_activite->email;
+			}
+			$elt_prestataire->appendChild($elt_email);
+
+			$elt_site_web = $xml->createElement('site_web');
+			$elt_site_web->nodeValue = $prestataire->url;
+			$elt_prestataire->appendChild($elt_site_web);
+
+			$elt_url_photo = $xml->createElement('url_photo');
+			$elt_url_photo->nodeValue = $prestataire->getUrlPhoto();
+			$elt_prestataire->appendChild($elt_url_photo);
+
+			$elt_id_ville = $xml->createElement('id_ville');
+			// on récupère la ville dans le tableau de toutes les villes
+			// pour avoir son id
+			$elt_id_ville->nodeValue = $villes[$prestataire->town]->id;
+			$elt_prestataire->appendChild($elt_id_ville);
+
+			// liste des ID d'activités séparés par des virgules
+			$elt_activites = $xml->createElement('activites');
+			foreach ($prestataire->activites as $id) {
+				if ($elt_activites->nodeValue !== "")
+					$elt_activites->nodeValue .= ', ';
+				$elt_activites->nodeValue .= $id;
+			}
+			$elt_prestataire->appendChild($elt_activites);
+
+			// liste des ID d'étiquettes séparés par des virgules
+			$elt_etiquettes = $xml->createElement('etiquettes');
+			foreach ($prestataire->etiquettes as $id) {
+				if ($elt_etiquettes->nodeValue !== "")
+					$elt_etiquettes->nodeValue .= ', ';
+				$elt_etiquettes->nodeValue .= $id;
+			}
+			$elt_prestataire->appendChild($elt_etiquettes);
+
+			$elt_prestataires->appendChild($elt_prestataire);
 		}
-		$elt_description = $xml->createElement('description');
-		$elt_description->nodeValue = htmlspecialchars($description);
-		$elt_prestataire->appendChild($elt_description);
-
-		$horaires = '';
-		if ($lang === EU) {
-			$horaires = $prestataire->horaires_eu;
-		} else if ($lang === FR) {
-			$horaires = $prestataire->horaires_fr;
-		}
-		$elt_horaires = $xml->createElement('horaires');
-		$elt_horaires->nodeValue = htmlspecialchars($horaires);
-		$elt_prestataire->appendChild($elt_horaires);
-
-		$autres_lieux_activite = '';
-		if ($lang === EU) {
-			$autres_lieux_activite = $prestataire->autres_lieux_activite_eu;
-		} else if ($lang === FR) {
-			$autres_lieux_activite = $prestataire->autres_lieux_activite_fr;
-		}
-		$elt_autres_lieux_activite = $xml->createElement('autres_lieux_activite');
-		$elt_autres_lieux_activite->nodeValue = htmlspecialchars($autres_lieux_activite);
-		$elt_prestataire->appendChild($elt_autres_lieux_activite);
-
-		$elt_adresse = $xml->createElement('adresse');
-		$elt_adresse->nodeValue = $prestataire->address;
-		$elt_prestataire->appendChild($elt_adresse);
-
-		$elt_longitude = $xml->createElement('longitude');
-		$elt_longitude->nodeValue = $prestataire->getLongitude();
-		$elt_prestataire->appendChild($elt_longitude);
-
-		$elt_latitude = $xml->createElement('latitude');
-		$elt_latitude->nodeValue = $prestataire->getLatitude();
-		$elt_prestataire->appendChild($elt_latitude);
-
-		$elt_telephone = $xml->createElement('telephone');
-		$elt_telephone->nodeValue = $prestataire->phone;
-		$elt_prestataire->appendChild($elt_telephone);
-
-		$elt_telephone2 = $xml->createElement('telephone2');
-		$elt_telephone2->nodeValue = $prestataire->telephone2;
-		$elt_prestataire->appendChild($elt_telephone2);
-
-		$elt_email = $xml->createElement('email');
-		$elt_email->nodeValue = $prestataire->email;
-		$elt_prestataire->appendChild($elt_email);
-
-		$elt_site_web = $xml->createElement('site_web');
-		$elt_site_web->nodeValue = $prestataire->url;
-		$elt_prestataire->appendChild($elt_site_web);
-
-		$elt_url_photo = $xml->createElement('url_photo');
-		$elt_url_photo->nodeValue = $prestataire->getUrlPhoto();
-		$elt_prestataire->appendChild($elt_url_photo);
-
-		$elt_id_ville = $xml->createElement('id_ville');
-		// on récupère la ville dans le tableau de toutes les villes
-		// pour avoir son id
-		$elt_id_ville->nodeValue = $villes[$prestataire->town]->id;
-		$elt_prestataire->appendChild($elt_id_ville);
-
-		// liste des ID d'activités séparés par des virgules
-		$elt_activites = $xml->createElement('activites');
-		foreach ($prestataire->activites as $id) {
-			if ($elt_activites->nodeValue !== "")
-				$elt_activites->nodeValue .= ', ';
-			$elt_activites->nodeValue .= $id;
-		}
-		$elt_prestataire->appendChild($elt_activites);
-
-		// liste des ID d'étiquettes séparés par des virgules
-		$elt_etiquettes = $xml->createElement('etiquettes');
-		foreach ($prestataire->etiquettes as $id) {
-			if ($elt_etiquettes->nodeValue !== "")
-				$elt_etiquettes->nodeValue .= ', ';
-			$elt_etiquettes->nodeValue .= $id;
-		}
-		$elt_prestataire->appendChild($elt_etiquettes);
-
-		$elt_prestataires->appendChild($elt_prestataire);
 	}
 	$racine->appendChild($elt_prestataires);
 
