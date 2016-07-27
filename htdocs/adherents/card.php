@@ -59,6 +59,7 @@ $socid=GETPOST('socid','int');
 
 // PATCH ASSO
 $assoid=GETPOST('assoid','int');
+$asso2id=GETPOST('asso2id','int');
 
 if (! empty($conf->mailmanspip->enabled))
 {
@@ -196,6 +197,14 @@ if (empty($reshook))
 			$result=$object->setAssoId($assoid);
 			if ($result < 0) dol_print_error($object->db,$object->error);
 		}
+	}
+	if ($action == 'setasso2id')
+	{
+	    if ($asso2id != $object->fk_asso2)	// If link differs from currently in database
+	    {
+	        $result=$object->setAsso2Id($asso2id);
+	        if ($result < 0) dol_print_error($object->db,$object->error);
+	    }
 	}
 
 	// Create user from a member
@@ -474,6 +483,7 @@ if (empty($reshook))
 		$socid=$_POST["socid"];
 		// PATCH ASSO
 		$assoid=$_POST["assoid"];
+		$asso2id=$_POST["asso2id"];
 
 		$object->civility_id = $civility_id;
 		$object->firstname   = $firstname;
@@ -500,6 +510,7 @@ if (empty($reshook))
 		$object->fk_soc      = $socid;
 		// PATCH ASSO
 		$object->fk_asso     = $assoid;
+		$object->fk_asso2    = $asso2id;
 		$object->public      = $public;
 
 		// Fill array 'array_options' with data from add form
@@ -1600,6 +1611,43 @@ else
 				{
 					$company=new Societe($db);
 					$result=$company->fetch($object->fk_asso);
+					print $company->getNomUrl(1);
+				}
+				else
+				{
+					print $langs->trans("AucunAssociationChoisie");
+				}
+			}
+			print '</td></tr>';
+
+			// 2è choix
+			print '<tr><td>';
+			print '<table class="nobordernopadding" width="100%"><tr><td>';
+			print $langs->trans("LienVersAsso2");
+			print '</td>';
+			if ($action != 'editasso2lien' && $user->rights->adherent->creer) print '<td align="right"><a href="'.$_SERVER["PHP_SELF"].'?action=editasso2lien&amp;rowid='.$object->id.'">'.img_edit($langs->trans('LienVersAsso2'),1).'</a></td>';
+			print '</tr></table>';
+			print '</td><td colspan="2" class="valeur">';
+			if ($action == 'editasso2lien')
+			{
+				$htmlname='asso2id';
+				print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'" name="form'.$htmlname.'">';
+				print '<input type="hidden" name="rowid" value="'.$object->id.'">';
+				print '<input type="hidden" name="action" value="set'.$htmlname.'">';
+				print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
+				print '<table class="nobordernopadding" cellpadding="0" cellspacing="0">';
+				print '<tr><td>';
+				print $form->select_company($object->fk_asso2,'asso2id','',1);
+				print '</td>';
+				print '<td align="left"><input type="submit" class="button" value="'.$langs->trans("Modify").'"></td>';
+				print '</tr></table></form>';
+			}
+			else
+			{
+				if ($object->fk_asso2)
+				{
+					$company=new Societe($db);
+					$result=$company->fetch($object->fk_asso2);
 					print $company->getNomUrl(1);
 				}
 				else
