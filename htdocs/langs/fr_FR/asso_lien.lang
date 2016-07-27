@@ -1,5 +1,6 @@
 # Dolibarr language file - fr_FR - Association Lien
 CHARSET=UTF-8
-LienVersAsso=Association 3 %%
+LienVersAsso=Association 3 %% (1er choix)
+LienVersAsso2=Association 3 %% (2è choix)
 AucunAssociationChoisie=Aucune association choisie
 Parrains=Parrains

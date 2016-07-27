@@ -93,6 +93,7 @@ class Adherent extends CommonObject
 
     // PATCH ASSO
     var $fk_asso;
+    var $fk_asso2;
 
     // Fields loaded by fetch_subscriptions()
     var $first_subscription_date;
@@ -433,6 +434,7 @@ class Adherent extends CommonObject
         $sql.= ", fk_soc="  .($this->fk_soc > 0?"'".$this->fk_soc."'":"null");
         // PATCH ASSO
         $sql.= ", fk_asso="  .($this->fk_asso > 0?"'".$this->fk_asso."'":"null");
+        $sql.= ", fk_asso2="  .($this->fk_asso2 > 0?"'".$this->fk_asso2."'":"null");
 
         $sql.= ", address=" .($this->address?"'".$this->db->escape($this->address)."'":"null");
         $sql.= ", zip="      .($this->zip?"'".$this->db->escape($this->zip)."'":"null");
@@ -1024,6 +1026,38 @@ class Adherent extends CommonObject
         }
     }
 
+    /**
+     *    Set link to an association (2nd choice)
+     *
+     *    @param     int	$assoid		Id of user to link to
+     *    @return    int						1=OK, -1=KO
+     */
+    function setAsso2Id($assoid)
+    {
+        global $conf, $langs;
+
+        $this->db->begin();
+
+        // Update link to asso
+        $sql = "UPDATE ".MAIN_DB_PREFIX."adherent SET fk_asso2 = ".($assoid>0 ? $assoid : 'null');
+        $sql.= " WHERE rowid = ".$this->id;
+
+        dol_syslog(get_class($this)."::setAsso2Id sql=".$sql);
+        $resql = $this->db->query($sql);
+        if ($resql)
+        {
+            $this->db->commit();
+            return 1;
+        }
+        else
+        {
+            $this->error=$this->db->error();
+            dol_syslog(get_class($this)."::setAsso2Id ".$this->error, LOG_ERR);
+            $this->db->rollback();
+            return -1;
+        }
+    }
+
 
     /**
      *	Method to load member from its login
@@ -1114,7 +1148,7 @@ class Adherent extends CommonObject
         $sql.= " t.libelle as type, t.cotisation as cotisation,";
         $sql.= " u.rowid as user_id, u.login as user_login";
         // PATCH ASSO
-        $sql.= ", d.fk_asso";
+        $sql.= ", d.fk_asso, d.fk_asso2";
         $sql.= " FROM ".MAIN_DB_PREFIX."adherent_type as t, ".MAIN_DB_PREFIX."adherent as d";
         $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."c_country as c ON d.country = c.rowid";
         $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."c_departements as dep ON d.state_id = dep.rowid";
@@ -1198,6 +1232,7 @@ class Adherent extends CommonObject
 
                 // PATCH ASSO
                 $this->fk_asso			= $obj->fk_asso;
+                $this->fk_asso2			= $obj->fk_asso2;
 
                 // Retreive all extrafield for thirdparty
                 // fetch optionals attributes and labels
