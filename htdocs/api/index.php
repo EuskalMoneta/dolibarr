@@ -88,6 +88,9 @@ foreach ($modulesdir as $dir)
                 if ($module == 'adherent') {
                     $part = 'adherents';
 				}
+                if ($module == 'banque') {
+                    $part = 'compta/bank';
+                }
                 if ($module == 'categorie') {
                     $part = 'categories';
 				}
