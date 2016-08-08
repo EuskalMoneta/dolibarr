@@ -80,6 +80,8 @@ class Members extends DolibarrApi
      * Get a list of members
      *
      * @param string    $typeid     ID of the type of member
+     * @param string    $login      To filter the members by login
+     * @param string    $name       To filter the members by firstname and lastname
      * @param string    $sortfield  Sort field
      * @param string    $sortorder  Sort order
      * @param int       $limit      Limit for list
@@ -88,7 +90,7 @@ class Members extends DolibarrApi
      *
      * @throws RestException
      */
-    function index($typeid = '', $sortfield = "a.rowid", $sortorder = 'ASC', $limit = 0, $page = 0) {
+    function index($typeid = '', $login = '', $name = '', $sortfield = "a.rowid", $sortorder = 'ASC', $limit = 0, $page = 0) {
         global $db, $conf;
 
         $obj_ret = array();
@@ -103,6 +105,12 @@ class Members extends DolibarrApi
         if (!empty($typeid))
         {
             $sql.= ' AND a.fk_adherent_type='.$typeid;
+        }
+        if (!empty($login)) {
+            $sql .= " AND a.login LIKE '%".$login."%'";
+        }
+        if (!empty($name)) {
+            $sql .= " AND (a.firstname LIKE '%".$name."%' OR a.lastname LIKE '%".$name."%')";
         }
 
         $nbtotalofrecords = 0;
