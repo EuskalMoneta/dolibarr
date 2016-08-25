@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y libpng12-dev libjpeg-dev \
 
 RUN docker-php-ext-install mysqli
 
+COPY build/docker/date-timezone.ini /usr/local/etc/php/conf.d/
+
 COPY htdocs/ /var/www/html/
 
 RUN chown -hR www-data:www-data /var/www/html
