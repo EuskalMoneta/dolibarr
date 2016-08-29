@@ -1,4 +1,4 @@
-build
+build/!docker
 build.xml
 ChangeLog
 composer.json
