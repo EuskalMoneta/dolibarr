@@ -49,6 +49,83 @@ class Users extends DolibarrApi
 		$this->useraccount = new User($this->db);
 	}
 
+    /**
+     * List users
+     *
+     * Get a list of users
+     *
+     * @param string    $login      To filter the users by login
+     * @param string    $name       To filter the users by firstname and lastname
+     * @param string    $sortfield  Sort field
+     * @param string    $sortorder  Sort order
+     * @param int       $limit      Limit for list
+     * @param int       $page       Page number
+     * @return array Array of user objects
+     *
+     * @throws RestException
+     */
+    function index($login = '', $name = '', $sortfield = "rowid", $sortorder = 'ASC', $limit = 0, $page = 0) {
+        global $db, $conf;
+
+        $obj_ret = array();
+
+        if(! DolibarrApiAccess::$user->rights->user->user->lire) {
+            throw new RestException(401);
+        }
+
+        $sql = "SELECT rowid";
+        $sql.= " FROM ".MAIN_DB_PREFIX."user";
+        $sql.= ' WHERE 1'; // hack to be able to always write "AND" after that
+        if (!empty($login)) {
+            $sql .= " AND login LIKE '%".$login."%'";
+        }
+        if (!empty($name)) {
+            $sql .= " AND (firstname LIKE '%".$name."%' OR lastname LIKE '%".$name."%')";
+        }
+
+        $nbtotalofrecords = 0;
+        if (empty($conf->global->MAIN_DISABLE_FULL_SCANLIST))
+        {
+            $result = $db->query($sql);
+            $nbtotalofrecords = $db->num_rows($result);
+        }
+
+        $sql.= $db->order($sortfield, $sortorder);
+        if ($limit)    {
+            if ($page < 0)
+            {
+                $page = 0;
+            }
+            $offset = $limit * $page;
+
+            $sql.= $db->plimit($limit + 1, $offset);
+        }
+
+        $result = $db->query($sql);
+        if ($result)
+        {
+            $i=0;
+            $num = $db->num_rows($result);
+            while ($i < $num)
+            {
+                $obj = $db->fetch_object($result);
+                $user = new User($this->db);
+                if ($user->fetch($obj->rowid)) {
+                    $obj_ret[] = $this->_cleanObjectDatas($user);
+                }
+                $i++;
+            }
+        }
+        else {
+            throw new RestException(503, 'Error when retrieve user list : '.$user->error);
+        }
+        if( ! count($obj_ret)) {
+            throw new RestException(404, 'No user found');
+        }
+
+        return $obj_ret;
+    }
+
 	/**
 	 * Get properties of an user object
 	 *
@@ -215,4 +292,27 @@ class Users extends DolibarrApi
 		}
 		return $account;
 	}
+
+    /**
+     * Clean sensible object datas
+     *
+     * @param   object  $object    Object to clean
+     * @return    array    Array of cleaned object properties
+     *
+     * @todo use an array for properties to clean
+     *
+     */
+    function _cleanObjectDatas($object) {
+
+        $object = parent::_cleanObjectDatas($object);
+
+        // Remove the API key and the password.
+        unset($object->api_key);
+        unset($object->pass);
+        unset($object->pass_indatabase);
+        unset($object->pass_indatabase_crypted);
+        unset($object->pass_temp);
+
+        return $object;
+    }
 }
