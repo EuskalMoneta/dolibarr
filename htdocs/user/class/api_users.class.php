@@ -17,7 +17,8 @@
 
 use Luracast\Restler\RestException;
 
-//require_once DOL_DOCUMENT_ROOT . '/contact/class/contact.class.php';
+require_once DOL_DOCUMENT_ROOT.'/user/class/user.class.php';
+require_once DOL_DOCUMENT_ROOT.'/user/class/usergroup.class.php';
 
 /**
  * API class for users
@@ -69,7 +70,7 @@ class Users extends DolibarrApi
 
         $obj_ret = array();
 
-        if(! DolibarrApiAccess::$user->rights->user->user->lire) {
+        if (! DolibarrApiAccess::$user->rights->user->user->lire) {
             throw new RestException(401);
         }
 
@@ -224,33 +225,6 @@ class Users extends DolibarrApi
         return false;
     }
 
-    /**
-	 * add user to group
-	 *
-	 * @param   int     $id User ID
-	 * @param   int     $group Group ID
-	 * @return  int
-     * 
-	 * @url	GET {id}/setGroup/{group}
-	 */
-	function setGroup($id, $group) {
-		//if (!DolibarrApiAccess::$user->rights->user->user->supprimer) {
-			//throw new RestException(401);
-		//}
-        $result = $this->useraccount->fetch($id);
-        if (!$result)
-        {
-          throw new RestException(404, 'User not found');
-        }
-    
-        if (!DolibarrApi::_checkAccessToResource('user', $this->useraccount->id, 'user'))
-        {
-          throw new RestException(401, 'Access not allowed for login ' . DolibarrApiAccess::$user->login);
-        }
-    
-        return $this->useraccount->SetInGroup($group,1);
-    }
-
 	/**
 	 * Delete account
 	 *
@@ -306,13 +280,78 @@ class Users extends DolibarrApi
 
         $object = parent::_cleanObjectDatas($object);
 
-        // Remove the API key and the password.
+        // Remove the API key and the password from user objects.
         unset($object->api_key);
         unset($object->pass);
         unset($object->pass_indatabase);
         unset($object->pass_indatabase_crypted);
         unset($object->pass_temp);
 
+        // Remove the members from group objects.
+        unset($object->members);
+
         return $object;
+    }
+
+    /**
+     * List groups of a user
+     *
+     * Get a list of groups
+     *
+     * @param int $id ID of user
+     * @return array Array of group objects
+     *
+     * @throws RestException
+     *
+     * @url GET {id}/groups
+     */
+    function getGroups($id)
+    {
+        $obj_ret = array();
+
+        if (! DolibarrApiAccess::$user->rights->user->user->lire) {
+            throw new RestException(401);
+        }
+
+        $user = new User($this->db);
+        $result = $user->fetch($id);
+        if( ! $result ) {
+            throw new RestException(404, 'user not found');
+        }
+
+        $usergroup = new UserGroup($this->db);
+        $groups = $usergroup->listGroupsForUser($id);
+        $obj_ret = array();
+        foreach ($groups as $group) {
+            $obj_ret[] = $this->_cleanObjectDatas($group);
+        }
+        return $obj_ret;
+    }
+
+    /**
+     * add user to group
+     *
+     * @param   int     $id User ID
+     * @param   int     $group Group ID
+     * @return  int
+     *
+     * @url	GET {id}/setGroup/{group}
+     */
+    function setGroup($id, $group) {
+        //if (!DolibarrApiAccess::$user->rights->user->user->supprimer) {
+            //throw new RestException(401);
+        //}
+        $result = $this->useraccount->fetch($id);
+        if (!$result)
+        {
+          throw new RestException(404, 'User not found');
+        }
+
+        if (!DolibarrApi::_checkAccessToResource('user', $this->useraccount->id, 'user'))
+        {
+          throw new RestException(401, 'Access not allowed for login ' . DolibarrApiAccess::$user->login);
+        }
+
+        return $this->useraccount->SetInGroup($group,1);
     }
 }
