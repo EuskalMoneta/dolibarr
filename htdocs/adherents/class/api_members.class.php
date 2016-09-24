@@ -81,7 +81,7 @@ class Members extends DolibarrApi
      *
      * @param string    $typeid     ID of the type of member
      * @param string    $login      To filter the members by login
-     * @param string    $name       To filter the members by firstname and lastname
+     * @param string    $name       To filter the members by name (firstname, lastname or company name matching the filter)
      * @param string    $sortfield  Sort field
      * @param string    $sortorder  Sort order
      * @param int       $limit      Limit for list
@@ -110,7 +110,7 @@ class Members extends DolibarrApi
             $sql .= " AND a.login LIKE '%".$login."%'";
         }
         if (!empty($name)) {
-            $sql .= " AND (a.firstname LIKE '%".$name."%' OR a.lastname LIKE '%".$name."%')";
+            $sql .= " AND (a.firstname LIKE '%".$name."%' OR a.lastname LIKE '%".$name."%' OR a.societe LIKE '%".$name."%')";
         }
 
         $nbtotalofrecords = 0;
