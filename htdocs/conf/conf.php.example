@@ -191,6 +191,13 @@ $dolibarr_main_authentication='dolibarr';
 // $dolibarr_main_auth_ldap_debug='false';
 
 
+// Parameters used to setup Cyclos 4 authentication.
+// Uncomment them if dolibarr_main_authentication = 'cyclos4'
+//
+// URL of the Cyclos 4 network.
+// $dolibarr_main_auth_cyclos4_network_url='http://localhost:8080/cyclos4/network/';
+
+
 // dolibarr_main_demo
 // Login and pass to use in a demo mode
 // Default value: ''
