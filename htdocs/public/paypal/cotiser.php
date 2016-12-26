@@ -28,7 +28,7 @@ define('MONTANT_MINIMUM', 5);
 define('MONTANT_MAXIMUM', 20);
 
 // Année jusqu'à la fin de laquelle la cotisation sera valable.
-define('ANNEE_FIN_COTISATION', 2016);
+define('ANNEE_FIN_COTISATION', 2017);
 
 // Numéro de l'adhérent.
 $numadh=GETPOST("numadh",'alpha');
