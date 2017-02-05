@@ -366,4 +366,42 @@ class Members extends DolibarrApi
         return $member->cotisation($start_date, $amount, 0, '', $label, '', '', '', $end_date);
     }
 
+    /**
+     * Create an user from member
+     *
+     * @param   int   $id   Id of member
+     * @param   array   $request_data   Request data
+     * @return  int     ID of user
+     *
+     * @url	POST {id}/createUser
+     */
+    function createUser($id, $request_data = NULL) {
+        if (! DolibarrApiAccess::$user->rights->adherent->lire) {
+            throw new RestException(401);
+        }
+
+        $member = new Adherent($this->db);
+        $result = $member->fetch($id);
+        if ( ! $result ) {
+            throw new RestException(404, 'member not found');
+        }
+
+        if ( ! DolibarrApi::_checkAccessToResource('adherent',$member->id)) {
+            throw new RestException(401, 'Access not allowed for login '.DolibarrApiAccess::$user->login);
+        }
+
+        // Check mandatory fields
+        if (!isset($request_data["login"]))
+            throw new RestException(400, "login field missing");
+        $login = $request_data["login"];
+
+        $user = new User($this->db);
+        $result = $user->create_from_member($member, $login);
+        if ($result <= 0) {
+            throw new RestException(500, "User not created");
+        }
+
+        return $result;
+    }
+
 }
