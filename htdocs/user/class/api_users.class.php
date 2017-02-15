@@ -57,6 +57,7 @@ class Users extends DolibarrApi
      *
      * @param string    $login      To filter the users by login
      * @param string    $name       To filter the users by name (firstname or lastname matching the filter)
+     * @param string    $email      To filter the users by email
      * @param string    $sortfield  Sort field
      * @param string    $sortorder  Sort order
      * @param int       $limit      Limit for list
@@ -65,7 +66,7 @@ class Users extends DolibarrApi
      *
      * @throws RestException
      */
-    function index($login = '', $name = '', $sortfield = "rowid", $sortorder = 'ASC', $limit = 0, $page = 0) {
+    function index($login = '', $name = '', $email = '', $sortfield = "rowid", $sortorder = 'ASC', $limit = 0, $page = 0) {
         global $db, $conf;
 
         $obj_ret = array();
@@ -82,6 +83,9 @@ class Users extends DolibarrApi
         }
         if (!empty($name)) {
             $sql .= " AND (firstname LIKE '%".$name."%' OR lastname LIKE '%".$name."%')";
+        }
+        if (!empty($email)) {
+            $sql .= " AND email LIKE '%".$email."%'";
         }
 
         $nbtotalofrecords = 0;
