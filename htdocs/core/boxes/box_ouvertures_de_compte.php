@@ -60,7 +60,7 @@ class box_ouvertures_de_compte extends ModeleBoxes
 			$sql_comptes.= " WHERE adh_extra.documents_pour_ouverture_du_compte_valides = 1";
 			$sql_comptes.= " AND adh.login LIKE ";
 
-			$result_comptes_prestataires = $db->query($sql_comptes . "'Z% AND adh_extra.accord_pour_ouverture_de_compte = 1'");
+			$result_comptes_prestataires = $db->query($sql_comptes . "'Z%' AND adh_extra.accord_pour_ouverture_de_compte = 1");
 			$result_comptes_utilisateurs = $db->query($sql_comptes . "'E%'");
 
 			$sql_prelevements = "SELECT COUNT(*) AS nb, SUM(prelevement_change_montant) AS total";
