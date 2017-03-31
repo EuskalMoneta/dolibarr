@@ -53,6 +53,16 @@ class box_ouvertures_de_compte extends ModeleBoxes
 
 		if ($user->rights->adherent->lire)
 		{
+			$sql_comptes_actives = "SELECT COUNT(*) AS nb";
+			$sql_comptes_actives.= " FROM ".MAIN_DB_PREFIX."adherent adh";
+			$sql_comptes_actives.= " JOIN ".MAIN_DB_PREFIX."adherent_extrafields adh_extra";
+			$sql_comptes_actives.= " ON adh.rowid = adh_extra.fk_object";
+			$sql_comptes_actives.= " WHERE adh_extra.accepte_cgu_eusko_numerique = 1";
+			$sql_comptes_actives.= " AND adh.login LIKE ";
+
+			$result_comptes_actives_prestataires = $db->query($sql_comptes_actives . "'Z%'");
+			$result_comptes_actives_utilisateurs = $db->query($sql_comptes_actives . "'E%'");
+
 			$sql_comptes_ouverts = "SELECT COUNT(*) AS nb";
 			$sql_comptes_ouverts.= " FROM ".MAIN_DB_PREFIX."adherent adh";
 			$sql_comptes_ouverts.= " JOIN ".MAIN_DB_PREFIX."adherent_extrafields adh_extra";
@@ -69,22 +79,46 @@ class box_ouvertures_de_compte extends ModeleBoxes
 
 			$result_prelevements = $db->query($sql_prelevements);
 
-			if ($result_comptes_ouverts_prestataires && $result_comptes_ouverts_utilisateurs && $result_prelevements)
+			if ($result_comptes_actives_prestataires && $result_comptes_actives_utilisateurs &&
+				$result_comptes_ouverts_prestataires && $result_comptes_ouverts_utilisateurs &&
+				$result_prelevements)
 			{
-				$obj_comptes_prestataires = $db->fetch_object($result_comptes_ouverts_prestataires);
-				$obj_comptes_utilisateurs = $db->fetch_object($result_comptes_ouverts_utilisateurs);
+				$obj_comptes_actives_prestataires = $db->fetch_object($result_comptes_actives_prestataires);
+				$obj_comptes_actives_utilisateurs = $db->fetch_object($result_comptes_actives_utilisateurs);
+				$obj_comptes_ouverts_prestataires = $db->fetch_object($result_comptes_ouverts_prestataires);
+				$obj_comptes_ouverts_utilisateurs = $db->fetch_object($result_comptes_ouverts_utilisateurs);
 				$obj_prelevements = $db->fetch_object($result_prelevements);
 
 				$ligne = 0;
 
 				$this->info_box_contents[$ligne][] = array(
 					'td' => 'align="left"',
-					'text' => $langs->trans("NombreComptesOuvertsPrestataires"),
+					'text' => $langs->trans("NombreComptesActivesPrestataires"),
 				);
 
 				$this->info_box_contents[$ligne][] = array(
 					'td' => 'align="right"',
-					'text' => $obj_comptes_prestataires->nb,
+					'text' => $obj_comptes_actives_prestataires->nb,
+				);
+
+				$this->info_box_contents[++$ligne][] = array(
+					'td' => 'align="left"',
+					'text' => $langs->trans("NombreComptesActivesUtilisateurs"),
+				);
+
+				$this->info_box_contents[$ligne][] = array(
+					'td' => 'align="right"',
+					'text' => $obj_comptes_actives_utilisateurs->nb,
+				);
+
+				$this->info_box_contents[$ligne][] = array(
+					'td' => 'align="left"',
+					'text' => $langs->trans("NombreComptesOuvertsPrestataires"),
+				);
+
+				$this->info_box_contents[++$ligne][] = array(
+					'td' => 'align="right"',
+					'text' => $obj_comptes_ouverts_prestataires->nb,
 				);
 
 				$this->info_box_contents[++$ligne][] = array(
@@ -94,7 +128,7 @@ class box_ouvertures_de_compte extends ModeleBoxes
 
 				$this->info_box_contents[$ligne][] = array(
 					'td' => 'align="right"',
-					'text' => $obj_comptes_utilisateurs->nb,
+					'text' => $obj_comptes_ouverts_utilisateurs->nb,
 				);
 
 				$this->info_box_contents[++$ligne][] = array(
@@ -127,6 +161,8 @@ class box_ouvertures_de_compte extends ModeleBoxes
 					'text' => round($obj_prelevements->total/$obj_prelevements->nb, 2),
 				);
 
+				$db->free($result_comptes_actives_prestataires);
+				$db->free($result_comptes_actives_utilisateurs);
 				$db->free($result_comptes_ouverts_prestataires);
 				$db->free($result_comptes_ouverts_utilisateurs);
 				$db->free($result_prelevements);

@@ -1,7 +1,9 @@
 BoxOuverturesCompte=Ouvertures de compte
 BoxTitleOuverturesCompte=Les ouvertures de compte Eusko numérique
-NombreComptesOuvertsPrestataires=Nombre de comptes ouverts - prestataires
-NombreComptesOuvertsUtilisateurs=Nombre de comptes ouverts - utilisateurs
+NombreComptesActivesPrestataires=Nombre de comptes activés (CGU acceptées) - prestataires
+NombreComptesActivesUtilisateurs=Nombre de comptes activés (CGU acceptées) - utilisateurs
+NombreComptesOuvertsPrestataires=Nombre de comptes ouverts (documents validés) - prestataires
+NombreComptesOuvertsUtilisateurs=Nombre de comptes ouverts (documents validés) - utilisateurs
 NombrePrelevementsAuto=Nombre de changes par prélèvement automatique
 TotalDesChanges=Total des changes par prélèvement
 MoyenneDesChanges=Moyenne des changes par prélèvement
