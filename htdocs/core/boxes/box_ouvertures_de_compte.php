@@ -103,22 +103,22 @@ class box_ouvertures_de_compte extends ModeleBoxes
 
 				$this->info_box_contents[++$ligne][] = array(
 					'td' => 'align="left"',
+					'text' => $langs->trans("NombreComptesOuvertsPrestataires"),
+				);
+
+				$this->info_box_contents[$ligne][] = array(
+					'td' => 'align="right"',
+					'text' => $obj_comptes_ouverts_prestataires->nb,
+				);
+
+				$this->info_box_contents[++$ligne][] = array(
+					'td' => 'align="left"',
 					'text' => $langs->trans("NombreComptesActivesUtilisateurs"),
 				);
 
 				$this->info_box_contents[$ligne][] = array(
 					'td' => 'align="right"',
 					'text' => $obj_comptes_actives_utilisateurs->nb,
-				);
-
-				$this->info_box_contents[$ligne][] = array(
-					'td' => 'align="left"',
-					'text' => $langs->trans("NombreComptesOuvertsPrestataires"),
-				);
-
-				$this->info_box_contents[++$ligne][] = array(
-					'td' => 'align="right"',
-					'text' => $obj_comptes_ouverts_prestataires->nb,
 				);
 
 				$this->info_box_contents[++$ligne][] = array(
