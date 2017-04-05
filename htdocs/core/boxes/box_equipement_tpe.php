@@ -63,12 +63,14 @@ class box_equipement_tpe extends ModeleBoxes
 			$result_nb_famoco = $db->query($sql . "'oui_famoco'");
 			$result_nb_smartphone = $db->query($sql . "'oui_smartphone_perso'");
 			$result_nb_pb_technique = $db->query($sql . "'non_techniquement_impossible'");
+			$result_nb_pas_necessaire = $db->query($sql . "'non_pas_necessaire'");
 
-			if ($result_nb_famoco && $result_nb_smartphone && $result_nb_pb_technique)
+			if ($result_nb_famoco && $result_nb_smartphone && $result_nb_pb_technique && $result_nb_pas_necessaire)
 			{
 				$obj_nb_famoco = $db->fetch_object($result_nb_famoco);
 				$obj_nb_smartphone = $db->fetch_object($result_nb_smartphone);
 				$obj_nb_pb_technique = $db->fetch_object($result_nb_pb_technique);
+				$obj_nb_pas_necessaire = $db->fetch_object($result_nb_pas_necessaire);
 
 				$ligne = 0;
 
@@ -112,9 +114,20 @@ class box_equipement_tpe extends ModeleBoxes
 					'text' => $obj_nb_pb_technique->nb,
 				);
 
+				$this->info_box_contents[++$ligne][] = array(
+					'td' => 'align="left"',
+					'text' => $langs->trans("NombrePasNecessaire"),
+				);
+
+				$this->info_box_contents[$ligne][] = array(
+					'td' => 'align="right"',
+					'text' => $obj_nb_pas_necessaire->nb,
+				);
+
 				$db->free($result_nb_famoco);
 				$db->free($result_nb_smartphone);
 				$db->free($result_nb_pb_technique);
+				$db->free($result_nb_pas_necessaire);
 			} else {
 				$this->info_box_contents[0][0] = array(
 					'td' => 'align="left"',
