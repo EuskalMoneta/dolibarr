@@ -70,8 +70,18 @@ class box_ouvertures_de_compte extends ModeleBoxes
 			$sql_comptes_ouverts.= " WHERE adh_extra.documents_pour_ouverture_du_compte_valides = 1";
 			$sql_comptes_ouverts.= " AND adh.login LIKE ";
 
-			$result_comptes_ouverts_prestataires = $db->query($sql_comptes_ouverts . "'Z%' AND adh_extra.accord_pour_ouverture_de_compte = 1");
+			$result_comptes_ouverts_prestataires = $db->query($sql_comptes_ouverts . "'Z%' AND adh_extra.accord_pour_ouverture_de_compte = 'oui'");
 			$result_comptes_ouverts_utilisateurs = $db->query($sql_comptes_ouverts . "'E%'");
+
+			$sql_refus_compte = "SELECT COUNT(*) AS nb";
+			$sql_refus_compte.= " FROM ".MAIN_DB_PREFIX."adherent adh";
+			$sql_refus_compte.= " JOIN ".MAIN_DB_PREFIX."adherent_extrafields adh_extra";
+			$sql_refus_compte.= " ON adh.rowid = adh_extra.fk_object";
+			$sql_refus_compte.= " WHERE adh_extra.accord_pour_ouverture_de_compte = 'non'";
+			$sql_refus_compte.= " AND adh.login LIKE ";
+
+			$result_refus_compte_prestataires = $db->query($sql_refus_compte . "'Z%'");
+			$result_refus_compte_utilisateurs = $db->query($sql_refus_compte . "'E%'");
 
 			$sql_prelevements = "SELECT COUNT(*) AS nb, SUM(prelevement_change_montant) AS total";
 			$sql_prelevements.= " FROM ".MAIN_DB_PREFIX."adherent_extrafields";
@@ -81,12 +91,15 @@ class box_ouvertures_de_compte extends ModeleBoxes
 
 			if ($result_comptes_actives_prestataires && $result_comptes_actives_utilisateurs &&
 				$result_comptes_ouverts_prestataires && $result_comptes_ouverts_utilisateurs &&
+				$result_refus_compte_prestataires && $result_refus_compte_utilisateurs &&
 				$result_prelevements)
 			{
 				$obj_comptes_actives_prestataires = $db->fetch_object($result_comptes_actives_prestataires);
 				$obj_comptes_actives_utilisateurs = $db->fetch_object($result_comptes_actives_utilisateurs);
 				$obj_comptes_ouverts_prestataires = $db->fetch_object($result_comptes_ouverts_prestataires);
 				$obj_comptes_ouverts_utilisateurs = $db->fetch_object($result_comptes_ouverts_utilisateurs);
+				$obj_refus_compte_prestataires = $db->fetch_object($result_refus_compte_prestataires);
+				$obj_refus_compte_utilisateurs = $db->fetch_object($result_refus_compte_utilisateurs);
 				$obj_prelevements = $db->fetch_object($result_prelevements);
 
 				$ligne = 0;
@@ -113,6 +126,16 @@ class box_ouvertures_de_compte extends ModeleBoxes
 
 				$this->info_box_contents[++$ligne][] = array(
 					'td' => 'align="left"',
+					'text' => $langs->trans("PrestatairesQuiNeVeulentPasDeCompte"),
+				);
+
+				$this->info_box_contents[$ligne][] = array(
+					'td' => 'align="right"',
+					'text' => $obj_refus_compte_prestataires->nb,
+				);
+
+				$this->info_box_contents[++$ligne][] = array(
+					'td' => 'align="left"',
 					'text' => $langs->trans("NombreComptesActivesUtilisateurs"),
 				);
 
@@ -129,6 +152,16 @@ class box_ouvertures_de_compte extends ModeleBoxes
 				$this->info_box_contents[$ligne][] = array(
 					'td' => 'align="right"',
 					'text' => $obj_comptes_ouverts_utilisateurs->nb,
+				);
+
+				$this->info_box_contents[++$ligne][] = array(
+					'td' => 'align="left"',
+					'text' => $langs->trans("UtilisateursQuiNeVeulentPasDeCompte"),
+				);
+
+				$this->info_box_contents[$ligne][] = array(
+					'td' => 'align="right"',
+					'text' => $obj_refus_compte_utilisateurs->nb,
 				);
 
 				$this->info_box_contents[++$ligne][] = array(
@@ -165,6 +198,8 @@ class box_ouvertures_de_compte extends ModeleBoxes
 				$db->free($result_comptes_actives_utilisateurs);
 				$db->free($result_comptes_ouverts_prestataires);
 				$db->free($result_comptes_ouverts_utilisateurs);
+				$db->free($result_refus_compte_prestataires);
+				$db->free($result_refus_compte_utilisateurs);
 				$db->free($result_prelevements);
 			} else {
 				$this->info_box_contents[0][0] = array(

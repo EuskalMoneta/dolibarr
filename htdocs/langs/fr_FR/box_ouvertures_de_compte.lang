@@ -7,3 +7,5 @@ NombreComptesOuvertsUtilisateurs=Nombre de comptes ouverts (documents validés) 
 NombrePrelevementsAuto=Nombre de changes par prélèvement automatique
 TotalDesChanges=Total des changes par prélèvement
 MoyenneDesChanges=Moyenne des changes par prélèvement
+PrestatairesQuiNeVeulentPasDeCompte=Prestataires qui ne veulent pas de compte
+UtilisateursQuiNeVeulentPasDeCompte=Utilisateurs qui ne veulent pas de compte
