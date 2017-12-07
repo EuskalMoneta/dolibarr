@@ -83,6 +83,7 @@ class Members extends DolibarrApi
      * @param string    $login      To filter the members by login
      * @param string    $name       To filter the members by name (firstname, lastname or company name matching the filter)
      * @param string    $email      To filter the members by email
+     * @param string    $token      To filter the members by token
      * @param string    $sortfield  Sort field
      * @param string    $sortorder  Sort order
      * @param int       $limit      Limit for list
@@ -91,7 +92,7 @@ class Members extends DolibarrApi
      *
      * @throws RestException
      */
-    function index($typeid = '', $login = '', $name = '', $email = '', $sortfield = "a.rowid", $sortorder = 'ASC', $limit = 0, $page = 0) {
+    function index($typeid = '', $login = '', $name = '', $email = '', $token = '', $sortfield = "a.rowid", $sortorder = 'ASC', $limit = 0, $page = 0) {
         global $db, $conf;
 
         $obj_ret = array();
@@ -102,6 +103,9 @@ class Members extends DolibarrApi
 
         $sql = "SELECT a.rowid";
         $sql.= " FROM ".MAIN_DB_PREFIX."adherent as a";
+        if (!empty($token)) {
+            $sql .= " JOIN ".MAIN_DB_PREFIX."adherent_extrafields as e ON a.rowid = e.fk_object";
+        }
         $sql.= ' WHERE a.entity IN ('.getEntity('adherent', 1).')';
         if (!empty($typeid))
         {
@@ -115,6 +119,9 @@ class Members extends DolibarrApi
         }
         if (!empty($email)) {
             $sql .= " AND a.email LIKE '%".$email."%'";
+        }
+        if (!empty($token)) {
+            $sql .= " AND e.token = '".$token."'";
         }
 
         $nbtotalofrecords = 0;
