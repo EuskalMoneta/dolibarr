@@ -9,8 +9,6 @@ RUN docker-php-ext-install mysqli
 
 COPY build/docker/date-timezone.ini /usr/local/etc/php/conf.d/
 
-COPY htdocs/ /var/www/html/
-
-RUN chown -hR www-data:www-data /var/www/html
+COPY --chown=www-data:www-data htdocs/ /var/www/html/
 
 EXPOSE 80
