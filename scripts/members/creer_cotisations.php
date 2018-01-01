@@ -41,12 +41,14 @@ $shortopts  = "";
 $longopts  = array(
 	"adherent:",
 	"annee:",
+	"debut-d-annee",
 );
 $options = getopt($shortopts, $longopts);
 $num_adherent = $options["adherent"];
 $annee = $options["annee"];
+$debut_d_annee = array_key_exists("debut-d-annee", $options);
 if ($num_adherent == "" || $annee == "") {
-	print "Usage : $script_file --adherent=NUM_ADHERENT --annee=ANNEE\n";
+	print "Usage : $script_file --adherent=NUM_ADHERENT --annee=ANNEE [--debut-d-annee]\n";
 	return 1;
 }
 
@@ -72,14 +74,33 @@ $prelevement_auto_cotisation_eusko = boolval($adherent->array_options["options_p
 $montant = floatval($adherent->array_options["options_prelevement_cotisation_montant"]);
 $periodicite = intval($adherent->array_options["options_prelevement_cotisation_periodicite"]);
 
+// Si l'option "début d'année" a été passée en argument, on crée une
+// cotisation d'un montant de zéro et valable jusqu'à la date du premier
+// prélèvement automatique de la cotisation en eusko.
 // Si la case "Cotisation offerte" est cochée, on crée une cotisation
 // d'un montant de zéro.
-if ($cotisation_offerte) {
-	print "Adhérent $num_adherent : cotisation offerte.\n";
+// C'est donc la même chose, avec uniquement la date de fin de
+// cotisation qui change.
+if ($debut_d_annee || $cotisation_offerte) {
+	if ($debut_d_annee) {
+		print "Adhérent $num_adherent : cotisation de zéro pour le début de l'année.\n";
+	} else if ($cotisation_offerte) {
+		print "Adhérent $num_adherent : cotisation offerte.\n";
+	}
 	$montant = 0;
 
+	if ($debut_d_annee) {
+		if ($adherent->login[0] === 'E') {
+			$jour_fin = "15/01";
+		} else if ($adherent->login[0] === 'Z') {
+			$jour_fin = "05/01";
+		}
+	} else if ($cotisation_offerte) {
+		$jour_fin = "31/12";
+	}
+
 	$date_debut = dol_stringtotime("01/01/".$annee);
-	$date_fin = dol_stringtotime("31/12/".$annee);
+	$date_fin = dol_stringtotime($jour_fin."/".$annee);
 	$accountid = 0;
 	$operation = '';
 	$num_chq = '';
