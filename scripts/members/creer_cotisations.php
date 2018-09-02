@@ -110,7 +110,7 @@ if ($debut_d_annee || $cotisation_offerte) {
 	// Création de la cotisation
 	$cotis_id = $adherent->cotisation($date_debut, $montant, $accountid, $operation, $label, $num_chq, $emetteur_nom, $emetteur_banque, $date_fin);
 	if ($cotis_id <= 0) {
-		throw new Exception("Erreur lors de la création de la cotisation : $member->error.\n");
+		throw new Exception("Erreur lors de la création de la cotisation : $adherent->error.\n");
 	}
 } else {
 	// Si la cotisation n'est pas offerte, c'est qu'elle doit être en
@@ -179,7 +179,7 @@ if ($debut_d_annee || $cotisation_offerte) {
 		// Création de la cotisation
 		$cotis_id = $adherent->cotisation($date_debut, $montant, $accountid, $operation, $label, $num_chq, $emetteur_nom, $emetteur_banque, $date_fin);
 		if ($cotis_id <= 0) {
-			print "Erreur lors de la création de la cotisation : $member->error.\n";
+			print "Erreur lors de la création de la cotisation : $adherent->error.\n";
 			$error = 1;
 			break;
 		}
