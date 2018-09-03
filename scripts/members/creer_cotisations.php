@@ -41,14 +41,16 @@ $shortopts  = "";
 $longopts  = array(
 	"adherent:",
 	"annee:",
+	"premier-mois:",
 	"debut-d-annee",
 );
 $options = getopt($shortopts, $longopts);
 $num_adherent = $options["adherent"];
 $annee = $options["annee"];
+$premier_mois = intval($options["premier-mois"]);
 $debut_d_annee = array_key_exists("debut-d-annee", $options);
 if ($num_adherent == "" || $annee == "") {
-	print "Usage : $script_file --adherent=NUM_ADHERENT --annee=ANNEE [--debut-d-annee]\n";
+	print "Usage : $script_file --adherent=NUM_ADHERENT --annee=ANNEE [--premier-mois=MOIS] [--debut-d-annee]\n";
 	return 1;
 }
 
@@ -164,6 +166,12 @@ if ($debut_d_annee || $cotisation_offerte) {
 	}
 
 	foreach ($cotisations_a_creer as $cotis) {
+		// Si l'option "premier mois" a été passée en argument, on ne
+		// génère pas les cotisations pour les mois précédents celui-là.
+		$mois = intval(explode("/", $cotis["debut"])[1]);
+		if ($premier_mois && $mois < $premier_mois) {
+			continue;
+		}
 		$date_debut = dol_stringtotime($cotis["debut"]);
 		$date_fin = dol_stringtotime($cotis["fin"]);
 		if ($prelevement_auto_cotisation_euro) {
