@@ -55,10 +55,12 @@ class box_equipement_tpe extends ModeleBoxes
 		{
 			$sql = "SELECT COUNT(*) AS nb";
 			$sql.= " FROM ".MAIN_DB_PREFIX."societe soc";
-			$sql.= " JOIN ".MAIN_DB_PREFIX."societe_extrafields soc_extra";
-			$sql.= " ON soc.rowid = soc_extra.fk_object";
+			$sql.= " JOIN ".MAIN_DB_PREFIX."socpeople sp ON soc.rowid = sp.fk_soc";
+			$sql.= " JOIN ".MAIN_DB_PREFIX."socpeople_extrafields spe ON sp.rowid = spe.fk_object";
+			$sql.= " JOIN ".MAIN_DB_PREFIX."categorie_contact cc ON sp.rowid = cc.fk_socpeople";
+			$sql.= " JOIN ".MAIN_DB_PREFIX."categorie cat ON cc.fk_categorie = cat.rowid AND cat.label = 'Adresse d''activité'";
 			$sql.= " WHERE soc.code_client IS NOT NULL AND soc.client = 1 AND soc.status = 1";
-			$sql.= " AND soc_extra.equipement_pour_euskokart = ";
+			$sql.= " AND spe.equipement_pour_euskokart = ";
 
 			$result_nb_famoco = $db->query($sql . "'oui_famoco'");
 			$result_nb_smartphone = $db->query($sql . "'oui_smartphone_perso'");
