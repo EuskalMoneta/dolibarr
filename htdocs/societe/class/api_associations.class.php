@@ -53,11 +53,9 @@ class Associations
         // fk_adherent_type = 1 <=> 'Association'
         // client = 1 <=> 'Client'
         // status = 1 <=> 'active'
-        $sql = "SELECT asso.rowid AS id, asso.code_client, asso.nom, asso.town,"
-                ." extra.description_euskara, extra.description_francais,"
+        $sql = "SELECT asso.rowid AS id, asso.code_client, asso.nom,"
                 ." COUNT(parrain.login) AS nb_parrains"
                 ." FROM ".MAIN_DB_PREFIX."societe AS asso"
-                ." JOIN ".MAIN_DB_PREFIX."societe_extrafields AS extra ON asso.rowid = extra.fk_object"
                 ." LEFT JOIN ".MAIN_DB_PREFIX."adherent AS parrain ON asso.rowid = parrain.fk_asso"
                 ." JOIN ".MAIN_DB_PREFIX."adherent AS adh ON asso.rowid = adh.fk_soc"
                 ." WHERE adh.fk_adherent_type = 1"
@@ -71,10 +69,7 @@ class Associations
         if ($result) {
             $num = $this->db->num_rows($result);
             for ($i = 0; $i < $num; $i++) {
-                $asso = $this->db->fetch_object($result);
-                $asso->description_euskara = html_entity_decode($asso->description_euskara);
-                $asso->description_francais = html_entity_decode($asso->description_francais);
-                $list[] = $asso;
+                $list[] = $this->db->fetch_object($result);
             }
         } else {
             throw new RestException(503, 'Error when retrieving list of associations : '.$this->db->lasterror());
