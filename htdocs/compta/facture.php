@@ -812,14 +812,14 @@ if (empty($reshook))
 	                        $line->fk_parent_line = $fk_parent_line;
 
 	                        $line->subprice =-$line->subprice; // invert price for object
-	                        $line->pa_ht = -$line->pa_ht;
+	                        $line->pa_ht = $line->pa_ht;       // we choosed to have buy/cost price always positive, so no revert of sign here
 	                        $line->total_ht=-$line->total_ht;
 	                        $line->total_tva=-$line->total_tva;
 	                        $line->total_ttc=-$line->total_ttc;
 	                        $line->total_localtax1=-$line->total_localtax1;
 	                        $line->total_localtax2=-$line->total_localtax2;
 
-	                        $result = $line->insert();
+	                        $result = $line->insert(0, 1);     // When creating credit note with same lines than source, we must ignore error if discount alreayd linked
 
 	                        $object->lines[] = $line; // insert new line in current object
 
@@ -2349,7 +2349,8 @@ if ($action == 'create')
 		else
 		{
 			print '<div class="tagtr listofinvoicetype"><div class="tagtd listofinvoicetype">';
-			$tmp='<input type="radio" name="type" id="radio_creditnote" value="0" disabled> ';
+			if (empty($conf->global->INVOICE_CREDIT_NOTE_STANDALONE)) $tmp='<input type="radio" name="type" id="radio_creditnote" value="0" disabled> ';
+			else $tmp='<input type="radio" name="type" id="radio_creditnote" value="2" > ';
 			$text = $tmp.$langs->trans("InvoiceAvoir") . ' ';
 			$text.= '('.$langs->trans("YouMustCreateInvoiceFromThird").') ';
 			$desc = $form->textwithpicto($text, $langs->transnoentities("InvoiceAvoirDesc"), 1, 'help', '', 0, 3);
@@ -3744,7 +3745,9 @@ else if ($id > 0 || ! empty($ref))
 		print '</td>';
 		if ($action != 'classify') {
 			print '<td align="right"><a href="' . $_SERVER["PHP_SELF"] . '?action=classify&amp;facid=' . $object->id . '">';
-			print img_edit($langs->trans('SetProject'), 1);
+			if ($user->rights->facture->creer) {
+				print img_edit($langs->trans('SetProject'), 1);
+			}
 			print '</a></td>';
 		}
 		print '</tr></table>';

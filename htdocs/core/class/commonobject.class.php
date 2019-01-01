@@ -2953,24 +2953,31 @@ abstract class CommonObject
      */
     function getTotalWeightVolume()
     {
-        $weightUnit=0;
-        $volumeUnit=0;
-        $totalWeight = '';
-        $totalVolume = '';
-        $totalOrdered = '';     // defined for shipment only
-        $totalToShip = '';      // defined for shipment only
+        $totalWeight = 0;
+        $totalVolume = 0;
+	    // defined for shipment only
+        $totalOrdered = 0;
+	    // defined for shipment only
+        $totalToShip = 0;
 
         foreach ($this->lines as $line)
         {
 
-            $totalOrdered+=$line->qty_asked;    // defined for shipment only
-            $totalToShip+=$line->qty_shipped;   // defined for shipment only
+            $totalOrdered+=($line->qty_asked ? $line->qty_asked : 0);    // defined for shipment only
+            $totalToShip+=($line->qty_shipped ? $line->qty_shipped : 0);   // defined for shipment only
 
-            // Define qty, weight, volume, weight_units, volume_units
-            if ($this->element == 'shipping') $qty=$line->qty_shipped;     // for shipments
-            else $qty=$line->qty;
-            $weight=$line->weight;
-            $volume=$line->volume;
+	        // Define qty, weight, volume, weight_units, volume_units
+	        if ($this->element == 'shipping') {
+		        // for shipments
+		        $qty = $line->qty_shipped ? $line->qty_shipped : 0;
+	        }
+	        else {
+		        $qty = $line->qty ? $line->qty : 0;
+	        }
+
+            $weight = $line->weight ? $line->weight : 0;
+            $volume = $line->volume ? $line->volume : 0;
+
             $weight_units=$line->weight_units;
             $volume_units=$line->volume_units;
 
@@ -3073,8 +3080,16 @@ abstract class CommonObject
 		$resql = $this->db->query($sql);
 		if ($resql)
 		{
-			$res = $this->db->fetch_object($resql);
-			return 'Incoterm : '.$res->code.' - '.$this->location_incoterms;
+			$num = $this->db->num_rows($resql);
+			if ($num > 0)
+			{
+				$res = $this->db->fetch_object($resql);
+				return 'Incoterm : '.$res->code.' - '.$this->location_incoterms;
+			}
+			else
+			{
+				return '';
+			}
 		}
 		else
 		{

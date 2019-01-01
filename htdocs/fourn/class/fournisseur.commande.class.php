@@ -1373,7 +1373,7 @@ class CommandeFournisseur extends CommonOrder
                         if ($result > 0)
                         {
                             $pu    = $prod->fourn_pu;       // Unit price supplier price set by get_buyprice
-                            $ref   = $prod->ref_fourn;      // Ref supplier price set by get_buyprice
+                            $fourn_ref   = $prod->ref_fourn;      // Ref supplier price set by get_buyprice
                         }
                         if ($result == 0)                   // If result == 0, we failed to found the supplier reference price
                         {
@@ -1437,11 +1437,14 @@ class CommandeFournisseur extends CommonOrder
 			$localtax2_type=$localtaxes_type[2];
 
             $subprice = price2num($pu,'MU');
+            
+            $rangmax = $this->line_max();
+            $rang = $rangmax + 1;
 
             // TODO We should use here $this->line=new CommandeFournisseurLigne($this->db); and $this->line->insert(); to work like other object (proposal, order, invoice)
             $sql = "INSERT INTO ".MAIN_DB_PREFIX."commande_fournisseurdet";
             $sql.= " (fk_commande, label, description, date_start, date_end,";
-            $sql.= " fk_product, product_type,";
+            $sql.= " fk_product, product_type, rang,";
             $sql.= " qty, tva_tx, localtax1_tx, localtax2_tx, localtax1_type, localtax2_type, remise_percent, subprice, ref,";
             $sql.= " total_ht, total_tva, total_localtax1, total_localtax2, total_ttc, fk_unit,";
 			$sql.= " fk_multicurrency, multicurrency_code, multicurrency_subprice, multicurrency_total_ht, multicurrency_total_tva, multicurrency_total_ttc";
@@ -1451,13 +1454,13 @@ class CommandeFournisseur extends CommonOrder
             $sql.= " ".($date_end?"'".$this->db->idate($date_end)."'":"null").",";
             if ($fk_product) { $sql.= $fk_product.","; }
             else { $sql.= "null,"; }
-            $sql.= "'".$product_type."',";
+            $sql.= "'".$product_type."', ".$rang.",";
             $sql.= "'".$qty."', ".$txtva.", ".$txlocaltax1.", ".$txlocaltax2;
 
            	$sql.= ", '".$localtax1_type."',";
 			$sql.= " '".$localtax2_type."'";
 
-            $sql.= ", ".$remise_percent.",'".price2num($subprice,'MU')."','".$ref."',";
+            $sql.= ", ".$remise_percent.",'".price2num($subprice,'MU')."','".$this->db->escape($fourn_ref)."',";
             $sql.= "'".price2num($total_ht)."',";
             $sql.= "'".price2num($total_tva)."',";
             $sql.= "'".price2num($total_localtax1)."',";
@@ -2752,7 +2755,8 @@ class CommandeFournisseurLigne extends CommonOrderLine
         $sql.= ' cd.info_bits, cd.total_ht, cd.total_tva, cd.total_ttc,';
         $sql.= ' cd.total_localtax1, cd.total_localtax2,';
         $sql.= ' p.ref as product_ref, p.label as product_libelle, p.description as product_desc,';
-        $sql.= ' cd.date_start, cd.date_end, cd.fk_unit';
+        $sql.= ' cd.date_start, cd.date_end, cd.fk_unit,';
+		$sql.= ' cd.multicurrency_subprice, cd.multicurrency_total_ht, cd.multicurrency_total_tva, cd.multicurrency_total_ttc';
         $sql.= ' FROM '.MAIN_DB_PREFIX.'commande_fournisseurdet as cd';
         $sql.= ' LEFT JOIN '.MAIN_DB_PREFIX.'product as p ON cd.fk_product = p.rowid';
         $sql.= ' WHERE cd.rowid = '.$rowid;
@@ -2760,33 +2764,38 @@ class CommandeFournisseurLigne extends CommonOrderLine
         if ($result)
         {
             $objp = $this->db->fetch_object($result);
-            $this->rowid            = $objp->rowid;
-            $this->fk_commande      = $objp->fk_commande;
-            $this->desc             = $objp->description;
-            $this->qty              = $objp->qty;
-            $this->subprice         = $objp->subprice;
-            $this->tva_tx           = $objp->tva_tx;
-            $this->localtax1_tx		= $objp->localtax1_tx;
-            $this->localtax2_tx		= $objp->localtax2_tx;
-            $this->remise           = $objp->remise;
-            $this->remise_percent   = $objp->remise_percent;
-            $this->fk_product       = $objp->fk_product;
-            $this->info_bits        = $objp->info_bits;
-            $this->total_ht         = $objp->total_ht;
-            $this->total_tva        = $objp->total_tva;
-            $this->total_localtax1	= $objp->total_localtax1;
-            $this->total_localtax2	= $objp->total_localtax2;
-            $this->total_ttc        = $objp->total_ttc;
-            $this->product_type     = $objp->product_type;
+            $this->rowid            		= $objp->rowid;
+            $this->fk_commande      		= $objp->fk_commande;
+            $this->desc             		= $objp->description;
+            $this->qty              		= $objp->qty;
+            $this->subprice         		= $objp->subprice;
+            $this->tva_tx           		= $objp->tva_tx;
+            $this->localtax1_tx				= $objp->localtax1_tx;
+            $this->localtax2_tx				= $objp->localtax2_tx;
+            $this->remise           		= $objp->remise;
+            $this->remise_percent   		= $objp->remise_percent;
+            $this->fk_product       		= $objp->fk_product;
+            $this->info_bits        		= $objp->info_bits;
+            $this->total_ht         		= $objp->total_ht;
+            $this->total_tva        		= $objp->total_tva;
+            $this->total_localtax1			= $objp->total_localtax1;
+            $this->total_localtax2			= $objp->total_localtax2;
+            $this->total_ttc        		= $objp->total_ttc;
+            $this->product_type     		= $objp->product_type;
 
-            $this->ref	            = $objp->product_ref;
-            $this->product_libelle  = $objp->product_libelle;
-            $this->product_desc     = $objp->product_desc;
+            $this->ref	            		= $objp->product_ref;
+            $this->product_libelle  		= $objp->product_libelle;
+            $this->product_desc     		= $objp->product_desc;
 
-            $this->date_start       = $this->db->jdate($objp->date_start);
-            $this->date_end         = $this->db->jdate($objp->date_end);
-	        $this->fk_unit          = $objp->fk_unit;
-
+            $this->date_start       		= $this->db->jdate($objp->date_start);
+            $this->date_end         		= $this->db->jdate($objp->date_end);
+	        $this->fk_unit          		= $objp->fk_unit;
+			
+			$this->multicurrency_subprice	= $objp->multicurrency_subprice;
+			$this->multicurrency_total_ht	= $objp->multicurrency_total_ht;
+			$this->multicurrency_total_tva	= $objp->multicurrency_total_tva;
+			$this->multicurrency_total_ttc	= $objp->multicurrency_total_ttc;
+			
             $this->db->free($result);
             return 1;
         }
