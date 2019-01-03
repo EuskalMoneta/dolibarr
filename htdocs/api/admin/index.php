@@ -1,6 +1,6 @@
 <?php
 /* Copyright (C) 2004		Rodolphe Quiedeville	<rodolphe@quiedeville.org>
- * Copyright (C) 2005-2010	Laurent Destailleur		<eldy@users.sourceforge.org>
+ * Copyright (C) 2005-2016	Laurent Destailleur		<eldy@users.sourceforge.org>
  * Copyright (C) 2011		Juanjo Menent			<jmenent@2byte.es>
  * Copyright (C) 2012		Regis Houssin			<regis.houssin@capnetworks.com>
  * Copyright (C) 2015		Jean-François Ferry     <jfefe@aternatik.fr>
@@ -27,6 +27,7 @@
 
 require '../../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
 
 $langs->load("admin");
 
@@ -42,8 +43,33 @@ if ($action == 'setproductionmode')
 
 	if (dolibarr_set_const($db, 'API_PRODUCTION_MODE', $status, 'chaine', 0, '', $conf->entity) > 0)
 	{
-		header("Location: ".$_SERVER["PHP_SELF"]);
-		exit;
+		$error=0;
+
+		if ($status == 1)
+		{
+			$result = dol_mkdir($conf->api->dir_temp);
+			if ($result < 0)
+			{
+				setEventMessages($langs->trans("ErrorFailedToCreateDir", $conf->api->dir_temp), null, 'errors');
+				$error++;
+			}
+		}
+		else
+		{
+			// Delete the cache file otherwise it does not update
+			$result = dol_delete_file($conf->api->dir_temp.'/routes.php');
+			if ($result < 0)
+			{
+				setEventMessages($langs->trans("ErrorFailedToDeleteFile", $conf->api->dir_temp.'/routes.php'), null, 'errors');
+				$error++;
+			}
+		}
+
+	    if (!$error)
+	    {
+    		header("Location: ".$_SERVER["PHP_SELF"]);
+	   	    exit;
+	    }
 	}
 	else
 	{
@@ -70,7 +96,7 @@ print '<table class="noborder" width="100%">';
 
 print '<tr class="liste_titre">';
 print "<td>".$langs->trans("Parameter")."</td>";
-print "<td>".$langs->trans("Value")."</td>";
+print '<td align="center">'.$langs->trans("Value")."</td>";
 print "<td>&nbsp;</td>";
 print "</tr>";
 
@@ -111,9 +137,15 @@ print '<br>';
 
 // Explorer
 print '<u>'.$langs->trans("ApiExporerIs").':</u><br>';
-$url=DOL_MAIN_URL_ROOT.'/api/index.php/explorer';
-print img_picto('','object_globe.png').' <a href="'.$url.'" target="_blank">'.$url."</a><br>\n";
-
+if (dol_is_dir(DOL_DOCUMENT_ROOT.'/includes/restler/framework/Luracast/Restler/explorer'))
+{
+    $url=DOL_MAIN_URL_ROOT.'/api/index.php/explorer';
+    print img_picto('','object_globe.png').' <a href="'.$url.'" target="_blank">'.$url."</a><br>\n";
+}
+else
+{
+    print $langs->trans("NotAvailableWithThisDistribution");
+}
 
 llxFooter();
 $db->close();

@@ -44,7 +44,7 @@ $result=restrictedArea($user,'produit|service');
 $action=GETPOST('action','alpha');
 $sref=GETPOST("sref");
 $snom=GETPOST("snom");
-$sall=GETPOST("sall");
+$sall=GETPOST('sall', 'alphanohtml');
 $type=GETPOST("type","int");
 $sbarcode=GETPOST("sbarcode",'alpha');
 $search_warehouse=GETPOST('search_warehouse','alpha');
@@ -77,7 +77,13 @@ if (! empty($canvas))
 	$objcanvas->getCanvas('product','list',$canvas);
 }
 
-if (! empty($_POST["button_removefilter_x"]))
+
+
+/*
+ * Actions
+ */
+
+if (GETPOST("button_removefilter_x") || GETPOST("button_removefilter.x") || GETPOST("button_removefilter")) // All tests are required to be compatible with all browsers
 {
     $sref="";
     $snom="";
@@ -90,14 +96,6 @@ if (! empty($_POST["button_removefilter_x"]))
     $search_batch='';
     $search_warehouse='';
 }
-
-
-
-/*
- * Actions
- */
-
-// None
 
 
 /*
@@ -115,7 +113,7 @@ $sql = 'SELECT p.rowid, p.ref, p.label, p.barcode, p.price, p.price_ttc, p.price
 $sql.= ' p.fk_product_type, p.tms as datem,';
 $sql.= ' p.duration, p.tosell as statut, p.tobuy, p.seuil_stock_alerte, p.desiredstock, p.stock, p.tobatch,';
 $sql.= ' ps.fk_entrepot,';
-$sql.= ' e.label as warehouse_label,';
+$sql.= ' e.label as warehouse_ref, e.lieu as warehouse_lieu, e.fk_parent as warehouse_parent,';
 $sql.= ' pb.batch, pb.eatby as oldeatby, pb.sellby as oldsellby,';
 $sql.= ' pl.eatby, pl.sellby,';
 $sql.= ' SUM(pb.qty) as stock_physique, COUNT(pb.rowid) as nbinbatchtable';
@@ -128,10 +126,7 @@ $sql.= ' LEFT JOIN '.MAIN_DB_PREFIX.'product_lot as pl on pl.fk_product = p.rowi
 if ($search_categ) $sql.= ", ".MAIN_DB_PREFIX."categorie_product as cp";
 $sql.= " WHERE p.entity IN (".getEntity('product', 1).")";
 if ($search_categ) $sql.= " AND p.rowid = cp.fk_product";	// Join for the needed table to filter by categ
-if ($sall)
-{
-	$sql.= " AND (p.ref LIKE '%".$db->escape($sall)."%' OR p.label LIKE '%".$db->escape($sall)."%' OR p.description LIKE '%".$db->escape($sall)."%' OR p.note LIKE '%".$db->escape($sall)."%')";
-}
+if ($sall) $sql.=natural_search(array('p.ref','p.label','p.description','p.note'), $sall);
 // if the type is not 1, we show all products (type = 0,2,3)
 if (dol_strlen($type))
 {
@@ -160,11 +155,17 @@ $sql.= " GROUP BY p.rowid, p.ref, p.label, p.barcode, p.price, p.price_ttc, p.pr
 $sql.= " p.fk_product_type, p.tms,";
 $sql.= " p.duration, p.tosell, p.tobuy, p.seuil_stock_alerte, p.desiredstock, p.stock, p.tobatch,";
 $sql.= " ps.fk_entrepot,";
-$sql.= " e.label,";
+$sql.= " e.label, e.lieu, e.fk_parent,";
 $sql.= " pb.batch, pb.eatby, pb.sellby,";
 $sql.= " pl.eatby, pl.sellby";
 if ($toolowstock) $sql.= " HAVING SUM(".$db->ifsql('ps.reel IS NULL', '0', 'ps.reel').") < p.seuil_stock_alerte";    // Not used yet
 $sql.= $db->order($sortfield,$sortorder);
+$nbtotalofrecords = '';
+if (empty($conf->global->MAIN_DISABLE_FULL_SCANLIST))
+{
+    $result = $db->query($sql);
+    $nbtotalofrecords = $db->num_rows($result);
+}
 $sql.= $db->plimit($limit + 1, $offset);
 $resql = $db->query($sql);
 
@@ -174,7 +175,7 @@ if ($resql)
 
 	$i = 0;
 
-	if ($num == 1 && ($sall or $snom or $sref))
+	if ($num == 1 && GETPOST('autojumpifoneonly') && ($sall or $snom or $sref))
 	{
 		$objp = $db->fetch_object($resql);
 		header("Location: card.php?id=$objp->rowid");
@@ -195,11 +196,11 @@ if ($resql)
 
 	if ($sref || $snom || $sall || GETPOST('search'))
 	{
-		print_barre_liste($texte, $page, $_SERVER["PHP_SELF"], "&sref=".$sref."&snom=".$snom."&amp;sall=".$sall."&amp;tosell=".$tosell."&amp;tobuy=".$tobuy, $sortfield, $sortorder,'',$num, 0, 'title_products');
+		print_barre_liste($texte, $page, $_SERVER["PHP_SELF"], "&sref=".$sref."&snom=".$snom."&amp;sall=".$sall."&amp;tosell=".$tosell."&amp;tobuy=".$tobuy, $sortfield, $sortorder,'',$num, $nbtotalofrecords, 'title_products');
 	}
 	else
 	{
-		print_barre_liste($texte, $page, $_SERVER["PHP_SELF"], "&sref=$sref&snom=$snom&fourn_id=$fourn_id".(isset($type)?"&amp;type=$type":""), $sortfield, $sortorder,'',$num, 0, 'title_products');
+		print_barre_liste($texte, $page, $_SERVER["PHP_SELF"], "&sref=$sref&snom=$snom&fourn_id=$fourn_id".(isset($type)?"&amp;type=$type":""), $sortfield, $sortorder,'',$num, $nbtotalofrecords, 'title_products');
 	}
 
 	if (! empty($catid))
@@ -251,7 +252,8 @@ if ($resql)
 	/*if ($eatby)		$param.="&eatby=".$eatby;
 	if ($sellby)	$param.="&sellby=".$sellby;*/
 
-    print '<table class="tagtable liste'.($moreforfilter?" listwithfilterbefore":"").'">';
+    print '<div class="div-table-responsive">';
+	print '<table class="tagtable liste'.($moreforfilter?" listwithfilterbefore":"").'">';
 	
 	// Lignes des titres
 	print "<tr class=\"liste_titre\">";
@@ -261,8 +263,8 @@ if ($resql)
 	print_liste_field_titre($langs->trans("Warehouse"), $_SERVER["PHP_SELF"], "e.label",$param,"",'',$sortfield,$sortorder);
 	//print_liste_field_titre($langs->trans("DesiredStock"), $_SERVER["PHP_SELF"], "p.desiredstock",$param,"",'align="right"',$sortfield,$sortorder);
 	print_liste_field_titre($langs->trans("Batch"), $_SERVER["PHP_SELF"], "pb.batch",$param,"",'align="center"',$sortfield,$sortorder);
-	print_liste_field_titre($langs->trans("l_eatby"), $_SERVER["PHP_SELF"], "pb.eatby",$param,"",'align="center"',$sortfield,$sortorder);
-	print_liste_field_titre($langs->trans("l_sellby"), $_SERVER["PHP_SELF"], "pb.sellby",$param,"",'align="center"',$sortfield,$sortorder);
+	print_liste_field_titre($langs->trans("EatByDate"), $_SERVER["PHP_SELF"], "pb.eatby",$param,"",'align="center"',$sortfield,$sortorder);
+	print_liste_field_titre($langs->trans("SellByDate"), $_SERVER["PHP_SELF"], "pb.sellby",$param,"",'align="center"',$sortfield,$sortorder);
 	print_liste_field_titre($langs->trans("PhysicalStock"), $_SERVER["PHP_SELF"], "stock_physique",$param,"",'align="right"',$sortfield,$sortorder);
 	// TODO Add info of running suppliers/customers orders
 	//print_liste_field_titre($langs->trans("TheoreticalStock"),$_SERVER["PHP_SELF"], "stock_theorique",$param,"",'align="right"',$sortfield,$sortorder);
@@ -305,7 +307,7 @@ if ($resql)
 	while ($i < min($num,$limit))
 	{
 		$objp = $db->fetch_object($resql);
-
+		
 		// Multilangs
 		if (! empty($conf->global->MAIN_MULTILANGS)) // si l'option est active
 		{
@@ -323,16 +325,29 @@ if ($resql)
 			}
 		}
 
-		$var=!$var;
-		print '<tr '.$bc[$var].'><td class="nowrap">';
+
 		$product_static->ref=$objp->ref;
 		$product_static->id=$objp->rowid;
         $product_static->label = $objp->label;
 		$product_static->type=$objp->fk_product_type;
 		$product_static->entity=$objp->entity;
+		
+		$warehousetmp->id=$objp->fk_entrepot;
+		$warehousetmp->ref=$objp->warehouse_ref;
+		$warehousetmp->label=$objp->warehouse_ref;
+		$warehousetmp->fk_parent=$objp->warehouse_parent;
+
+		$var=!$var;
+
+		print '<tr '.$bc[$var].'>';
+		
+		// Ref
+		print '<td class="nowrap">';
 		print $product_static->getNomUrl(1,'',16);
 		//if ($objp->stock_theorique < $objp->seuil_stock_alerte) print ' '.img_warning($langs->trans("StockTooLow"));
 		print '</td>';
+		
+		// Label
 		print '<td>'.$objp->label.'</td>';
 
 		if (! empty($conf->service->enabled) && $type == 1)
@@ -352,9 +367,6 @@ if ($resql)
 		print '<td>';
 		if ($objp->fk_entrepot > 0)
 		{
-		    $warehousetmp->id=$objp->fk_entrepot;
-		    $warehousetmp->label=$objp->warehouse_label;
-    		//$warehousetmp->fetch($objp->fk_entrepot);
     		print $warehousetmp->getNomUrl(1);
 		}
 		print '</td>';
@@ -373,6 +385,7 @@ if ($resql)
 	}
 
 	print "</table>";
+	print '</div>';
 	print '</form>';
 
 	if ($num > $conf->liste_limit)

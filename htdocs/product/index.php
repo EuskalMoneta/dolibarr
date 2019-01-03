@@ -2,7 +2,7 @@
 /* Copyright (C) 2001-2006  Rodolphe Quiedeville    <rodolphe@quiedeville.org>
  * Copyright (C) 2004-2015  Laurent Destailleur     <eldy@users.sourceforge.net>
  * Copyright (C) 2005-2014  Regis Houssin           <regis.houssin@capnetworks.com>
- * Copyright (C) 2014       Charles-Fr BENKE        <charles.fr@benke.fr>
+ * Copyright (C) 2014-2016  Charlie BENKE           <charlie@patas-monkey.com>
  * Copyright (C) 2015       Jean-François Ferry     <jfefe@aternatik.fr>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -40,6 +40,10 @@ else if ($type=='1') $result=restrictedArea($user,'service');
 else $result=restrictedArea($user,'produit|service');
 
 $langs->load("products");
+$langs->load("stocks");
+
+// Initialize technical object to manage hooks. Note that conf->hooks_modules contains array of hooks
+$hookmanager->initHooks(array('productindex'));
 
 $product_static = new Product($db);
 
@@ -79,7 +83,7 @@ print '<div class="fichecenter"><div class="fichethirdleft">';
 /*
  * Search Area of product/service
  */
- 
+
 // Search contract
 if ((! empty($conf->product->enabled) || ! empty($conf->service->enabled)) && ($user->rights->produit->lire || $user->rights->service->lire))
 {
@@ -101,7 +105,7 @@ if (count($listofsearchfields))
 		print '</tr>';
 		$i++;
 	}
-	print '</table>';	
+	print '</table>';
 	print '</form>';
 	print '<br>';
 }
@@ -115,6 +119,10 @@ $prodser[0][0]=$prodser[0][1]=$prodser[1][0]=$prodser[1][1]=0;
 $sql = "SELECT COUNT(p.rowid) as total, p.fk_product_type, p.tosell, p.tobuy";
 $sql.= " FROM ".MAIN_DB_PREFIX."product as p";
 $sql.= ' WHERE p.entity IN ('.getEntity($product_static->element, 1).')';
+// Add where from hooks
+$parameters=array();
+$reshook=$hookmanager->executeHooks('printFieldListWhere',$parameters);    // Note that $action and $object may have been modified by hook
+$sql.=$hookmanager->resPrint;
 $sql.= " GROUP BY p.fk_product_type, p.tosell, p.tobuy";
 $result = $db->query($sql);
 while ($objp = $db->fetch_object($result))
@@ -245,6 +253,10 @@ $sql.= " p.tms as datem";
 $sql.= " FROM ".MAIN_DB_PREFIX."product as p";
 $sql.= " WHERE p.entity IN (".getEntity($product_static->element, 1).")";
 if ($type != '') $sql.= " AND p.fk_product_type = ".$type;
+// Add where from hooks
+$parameters=array();
+$reshook=$hookmanager->executeHooks('printFieldListWhere',$parameters);    // Note that $action and $object may have been modified by hook
+$sql.=$hookmanager->resPrint;
 $sql.= $db->order("p.tms","DESC");
 $sql.= $db->plimit($max,0);
 
@@ -323,12 +335,12 @@ if ($result)
     			else print price($objp->price).' '.$langs->trans("HT");
     			print '</td>';
 			}
-			print '<td align="right" class="nowrap">';
+			print '<td align="right" class="nowrap"><span class="statusrefsell">';
 			print $product_static->LibStatut($objp->tosell,5,0);
-			print "</td>";
-            print '<td align="right" class="nowrap">';
+			print "</span></td>";
+            print '<td align="right" class="nowrap"><span class="statusrefbuy">';
             print $product_static->LibStatut($objp->tobuy,5,1);
-            print "</td>";
+            print "</span></td>";
 			print "</tr>\n";
 			$i++;
 		}
@@ -348,7 +360,7 @@ else
 // TODO Move this into a page that should be available into menu "accountancy - report - turnover - per quarter"
 // Also method used for counting must provide the 2 possible methods like done by all other reports into menu "accountancy - report - turnover":
 // "commitment engagment" method and "cash accounting" method
-if ($conf->global->MAIN_FEATURES_LEVEL)
+if (! empty($conf->global->MAIN_SHOW_PRODUCT_ACTIVITY_TRIM))
 {
 	if (! empty($conf->product->enabled)) activitytrim(0);
 	if (! empty($conf->service->enabled)) activitytrim(1);
@@ -418,7 +430,7 @@ function activitytrim($product_type)
 		$i = 0;
 
 		$var=true;
-		
+
 		while ($i < $num)
 		{
 			$objp = $db->fetch_object($result);

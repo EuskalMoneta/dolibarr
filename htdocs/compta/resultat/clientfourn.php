@@ -160,6 +160,11 @@ $hselected = 'report';
 
 report_header($name,$nomlink,$period,$periodlink,$description,$builddate,$exportlink,array('modecompta'=>$modecompta),$calcmode);
 
+if (! empty($conf->accounting->enabled))
+{
+    print info_admin($langs->trans("WarningReportNotReliable"), 0, 0, 1);
+}
+
 // Show report array
 $param='&modecompta='.$modecompta;
 if ($date_startday) $param.='&date_startday='.$date_startday;
@@ -557,7 +562,7 @@ if ($modecompta == 'CREANCES-DETTES')
 print '<td colspan="3" align="right">'.price(-$subtotal_ttc).'</td>';
 print '</tr>';
 
-if ($mysoc->tva_assuj == 'franchise')	// Non assujeti
+if ($mysoc->tva_assuj == 'franchise')	// Non assujetti
 {
     // Total
     print '<tr>';
@@ -595,7 +600,7 @@ if (! empty($conf->salaries->enabled))
 	$sql.= " WHERE p.entity = ".$conf->entity;
 	if (! empty($date_start) && ! empty($date_end))
 		$sql.= " AND $column >= '".$db->idate($date_start)."' AND $column <= '".$db->idate($date_end)."'";
-		
+
 	$sql.= " GROUP BY u.rowid, u.firstname, u.lastname, p.fk_user, p.label, dm";
 	$newsortfield = $sortfield;
     if ($newsortfield == 's.nom, s.rowid') $newsortfield = 'u.firstname, u.lastname';
@@ -626,7 +631,7 @@ if (! empty($conf->salaries->enabled))
 	            $var = !$var;
 	            print "<tr ".$bc[$var]."><td>&nbsp;</td>";
 
-	            print "<td>".$langs->trans("Salaries")." <a href=\"".DOL_URL_ROOT."/compta/salaries/index.php?filtre=s.fk_user=".$obj->fk_user."\">".$obj->firstname." ".$obj->lastname."</a></td>\n";
+	            print "<td>".$langs->trans("Salary")." <a href=\"".DOL_URL_ROOT."/compta/salaries/index.php?filtre=s.fk_user=".$obj->fk_user."\">".$obj->firstname." ".$obj->lastname."</a></td>\n";
 
 	            if ($modecompta == 'CREANCES-DETTES') print '<td align="right">'.price(-$obj->amount).'</td>';
 	            print '<td align="right">'.price(-$obj->amount).'</td>';
@@ -666,9 +671,8 @@ if (! empty($conf->expensereport->enabled))
 		$sql.= " INNER JOIN ".MAIN_DB_PREFIX."user as u ON u.rowid=p.fk_user_author";
 		$sql.= " WHERE p.entity = ".getEntity('expensereport',1);
 		$sql.= " AND p.fk_statut>=5";
-		
+
 		$column='p.date_valid';
-		
 	} else {
 		$sql = "SELECT p.rowid, p.ref, u.rowid as userid, u.firstname, u.lastname, date_format(pe.datep,'%Y-%m') as dm, sum(p.total_ht) as amount_ht, sum(p.total_ttc) as amount_ttc";
 		$sql.= " FROM ".MAIN_DB_PREFIX."expensereport as p";
@@ -677,12 +681,12 @@ if (! empty($conf->expensereport->enabled))
 		$sql.= " INNER JOIN ".MAIN_DB_PREFIX."c_paiement as c ON pe.fk_typepayment = c.id";
 		$sql.= " WHERE p.entity = ".getEntity('expensereport',1);
 		$sql.= " AND p.fk_statut>=5";
-		
+
 		$column='pe.datep';
 	}
 
 	print '<tr><td colspan="4">'.$langs->trans("ExpenseReport").'</td></tr>';
-	
+
 	if (! empty($date_start) && ! empty($date_end))
 	{
 		$sql.= " AND $column >= '".$db->idate($date_start)."' AND $column <= '".$db->idate($date_end)."'";
@@ -740,19 +744,28 @@ if (! empty($conf->expensereport->enabled))
 }
 
 /*
- * Donation
+ * Donations
  */
 
 if (! empty($conf->don->enabled))
 {
-	print '<tr><td colspan="4">'.$langs->trans("Donation").'</td></tr>';
-	$sql = "SELECT p.societe as name, p.firstname, p.lastname, date_format(p.datedon,'%Y-%m') as dm, sum(p.amount) as amount";
-	$sql.= " FROM ".MAIN_DB_PREFIX."don as p";
-	$sql.= " WHERE p.entity = ".$conf->entity;
+	print '<tr><td colspan="4">'.$langs->trans("Donations").'</td></tr>';
 	if ($modecompta == 'CREANCES-DETTES')
-	   $sql.= " AND fk_statut in (1,2)";
+	{
+    	$sql = "SELECT p.societe as name, p.firstname, p.lastname, date_format(p.datedon,'%Y-%m') as dm, sum(p.amount) as amount";
+    	$sql.= " FROM ".MAIN_DB_PREFIX."don as p";
+    	$sql.= " WHERE p.entity = ".$conf->entity;
+    	$sql.= " AND fk_statut in (1,2)";
+	}
 	else
-	   $sql.= " AND fk_statut=2";
+	{
+	    $sql = "SELECT p.societe as nom, p.firstname, p.lastname, date_format(p.datedon,'%Y-%m') as dm, sum(p.amount) as amount";
+	    $sql.= " FROM ".MAIN_DB_PREFIX."don as p";
+	    $sql.= " INNER JOIN ".MAIN_DB_PREFIX."payment_donation as pe ON pe.fk_donation = p.rowid";
+	    $sql.= " INNER JOIN ".MAIN_DB_PREFIX."c_paiement as c ON pe.fk_typepayment = c.id";
+	    $sql.= " WHERE p.entity = ".getEntity('donation',1);
+	    $sql.= " AND fk_statut >= 2";	 
+	}
 	if (! empty($date_start) && ! empty($date_end))
 		$sql.= " AND p.datedon >= '".$db->idate($date_start)."' AND p.datedon <= '".$db->idate($date_end)."'";
 	$sql.= " GROUP BY p.societe, p.firstname, p.lastname, dm";
@@ -1017,7 +1030,7 @@ else
 }
 
 
-if ($mysoc->tva_assuj != 'franchise')	// Assujeti
+if ($mysoc->tva_assuj != 'franchise')	// Assujetti
 {
     print '<tr class="liste_total">';
     if ($modecompta == 'CREANCES-DETTES')
@@ -1037,7 +1050,7 @@ $hookmanager->initHooks(array('externalbalance'));
 $reshook=$hookmanager->executeHooks('addBalanceLine',$parameters,$object,$action);    // Note that $action and $object may have been modified by some hooks
 print $hookmanager->resPrint;
 
-if ($mysoc->tva_assuj != 'franchise')	// Assujeti
+if ($mysoc->tva_assuj != 'franchise')	// Assujetti
 {
     // Total
     print '<tr>';

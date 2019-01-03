@@ -140,7 +140,7 @@ if ($action == 'adduser' || $action =='removeuser')
 {
     if ($caneditperms)
     {
-        if ($userid)
+        if ($userid > 0)
         {
             $object->fetch($id);
 			$object->oldcopy = clone $object;
@@ -244,7 +244,7 @@ if ($action == 'create')
 	{
 		if (empty($conf->multicompany->transverse_mode) && $conf->entity == 1 && $user->admin && ! $user->entity)
 		{
-			print "<tr>".'<td valign="top">'.$langs->trans("Entity").'</td>';
+			print "<tr>".'<td class="tdtop">'.$langs->trans("Entity").'</td>';
 			print "<td>".$mc->select_entities($conf->entity);
 			print "</td></tr>\n";
 		}
@@ -256,7 +256,7 @@ if ($action == 'create')
 
     print "<tr>".'<td class="tdtop">'.$langs->trans("Description").'</td><td>';
     require_once DOL_DOCUMENT_ROOT.'/core/class/doleditor.class.php';
-    $doleditor=new DolEditor('note','','',240,'dolibarr_notes','',false,true,$conf->global->FCKEDITOR_ENABLE_SOCIETE,ROWS_8,90);
+    $doleditor=new DolEditor('note','','',240,'dolibarr_notes','',false,true,$conf->global->FCKEDITOR_ENABLE_SOCIETE,ROWS_8,'90%');
     $doleditor->Create();
     print "</td></tr>\n";
 
@@ -311,15 +311,15 @@ else
 			print '<table class="border" width="100%">';
 
 			// Ref
-			print '<tr><td width="25%">'.$langs->trans("Ref").'</td>';
-			print '<td colspan="2">';
+			print '<tr><td class="titlefield">'.$langs->trans("Ref").'</td>';
+			print '<td>';
 			print $form->showrefnav($object,'id','',$user->rights->user->user->lire || $user->admin);
 			print '</td>';
 			print '</tr>';
 
 			// Name
-			print '<tr><td width="25%">'.$langs->trans("Name").'</td>';
-			print '<td width="75%" class="valeur">'.$object->name;
+			print '<tr><td>'.$langs->trans("Name").'</td>';
+			print '<td class="valeur">'.$object->name;
 			if (empty($object->entity))
 			{
 				print img_picto($langs->trans("GlobalGroup"),'redstar');
@@ -330,13 +330,13 @@ else
 			if (! empty($conf->multicompany->enabled) && is_object($mc) && empty($conf->multicompany->transverse_mode) && $conf->entity == 1 && $user->admin && ! $user->entity)
 			{
 				$mc->getInfo($object->entity);
-				print "<tr>".'<td valign="top">'.$langs->trans("Entity").'</td>';
-				print '<td width="75%" class="valeur">'.$mc->label;
+				print "<tr>".'<td class="tdtop">'.$langs->trans("Entity").'</td>';
+				print '<td class="valeur">'.$mc->label;
 				print "</td></tr>\n";
 			}
 
 			// Note
-			print '<tr><td width="25%" class="tdtop">'.$langs->trans("Description").'</td>';
+			print '<tr><td class="tdtop">'.$langs->trans("Description").'</td>';
 			print '<td class="valeur">'.dol_htmlentitiesbr($object->note).'&nbsp;</td>';
 			print "</tr>\n";
 
@@ -397,8 +397,8 @@ else
                 print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
                 print '<input type="hidden" name="action" value="adduser">';
                 print '<table class="noborder" width="100%">'."\n";
-                print '<tr class="liste_titre"><td class="liste_titre" width="25%">'.$langs->trans("NonAffectedUsers").'</td>'."\n";
-                print '<td>';
+                print '<tr class="liste_titre"><td class="titlefield liste_titre">'.$langs->trans("NonAffectedUsers").'</td>'."\n";
+                print '<td class="liste_titre">';
                 print $form->select_dolusers('', 'user', 1, $exclude, 0, '', '', $object->entity, 0, 0, '', 0, '', 'maxwidth300');
                 print ' &nbsp; ';
                 // Multicompany
@@ -406,7 +406,7 @@ else
                 {
                     if ($conf->entity == 1 && $conf->multicompany->transverse_mode)
                     {
-                        print '</td><td valign="top">'.$langs->trans("Entity").'</td>';
+                        print '</td><td class="tdtop">'.$langs->trans("Entity").'</td>';
                         print "<td>".$mc->select_entities($conf->entity);
                     }
                     else
@@ -450,7 +450,7 @@ else
 
             		print "<tr ".$bc[$var].">";
             		print '<td>';
-            		print '<a href="'.DOL_URL_ROOT.'/user/card.php?id='.$useringroup->id.'">'.img_object($langs->trans("ShowUser"),"user").' '.$useringroup->login.'</a>';
+            		print $useringroup->getNomUrl(-1, '', 0, 0, 24, 0, 'login');
             		if ($useringroup->admin  && ! $useringroup->entity) print img_picto($langs->trans("SuperAdministrator"),'redstar');
             		else if ($useringroup->admin) print img_picto($langs->trans("Administrator"),'star');
             		print '</td>';
@@ -491,7 +491,7 @@ else
             }
             else
             {
-                print '<tr><td colspan=2 class="opacitymedium">'.$langs->trans("None").'</td></tr>';
+                print '<tr><td colspan="6" class="opacitymedium">'.$langs->trans("None").'</td></tr>';
             }
             print "</table>";
             print "<br>";
@@ -509,8 +509,8 @@ else
             dol_fiche_head($head, 'group', $title, 0, 'group');
 
             print '<table class="border" width="100%">';
-            print '<tr><td width="25%" valign="top" class="fieldrequired">'.$langs->trans("Name").'</td>';
-            print '<td width="75%" class="valeur"><input size="15" type="text" name="group" value="'.$object->name.'">';
+            print '<tr><td class="titlefield fieldrequired">'.$langs->trans("Name").'</td>';
+            print '<td class="valeur"><input size="15" type="text" name="group" value="'.$object->name.'">';
             print "</td></tr>\n";
 
             // Multicompany
@@ -518,7 +518,7 @@ else
             {
                 if (empty($conf->multicompany->transverse_mode) && $conf->entity == 1 && $user->admin && ! $user->entity)
                 {
-                    print "<tr>".'<td valign="top">'.$langs->trans("Entity").'</td>';
+                    print "<tr>".'<td class="tdtop">'.$langs->trans("Entity").'</td>';
                     print "<td>".$mc->select_entities($object->entity);
                     print "</td></tr>\n";
                 }
@@ -528,15 +528,15 @@ else
             	}
             }
 
-            print '<tr><td width="25%" valign="top">'.$langs->trans("Description").'</td>';
+            print '<tr><td class="tdtop">'.$langs->trans("Description").'</td>';
             print '<td class="valeur">';
             require_once DOL_DOCUMENT_ROOT.'/core/class/doleditor.class.php';
-            $doleditor=new DolEditor('note',$object->note,'',240,'dolibarr_notes','',true,false,$conf->global->FCKEDITOR_ENABLE_SOCIETE,ROWS_8,90);
+            $doleditor=new DolEditor('note',$object->note,'',240,'dolibarr_notes','',true,false,$conf->global->FCKEDITOR_ENABLE_SOCIETE,ROWS_8,'90%');
             $doleditor->Create();
             print '</td>';
             print "</tr>\n";
         	// Other attributes
-            $parameters=array('colspan' => ' colspan="2"');
+            $parameters=array();
             $reshook=$hookmanager->executeHooks('formObjectOptions',$parameters,$object,$action);    // Note that $action and $object may have been modified by hook
             if (empty($reshook) && ! empty($extrafields->attribute_label))
             {

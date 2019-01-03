@@ -43,6 +43,8 @@ class Dolresource extends CommonObject
 	var $type_label;
 	var $tms='';
 
+	var $oldcopy;
+
     /**
      *  Constructor
      *
@@ -63,7 +65,7 @@ class Dolresource extends CommonObject
      */
     function create($user, $notrigger=0)
     {
-    	global $conf, $langs;
+    	global $conf, $langs, $hookmanager;
     	$error=0;
 
     	// Clean parameters
@@ -107,14 +109,40 @@ class Dolresource extends CommonObject
     	if (! $error)
     	{
     		$this->id = $this->db->last_insert_id(MAIN_DB_PREFIX.$this->table_element);
+    	}
 
+    	if (! $error)
+    	{
+    		$action='create';
+
+    		// Actions on extra fields (by external module or standard code)
+    		// TODO le hook fait double emploi avec le trigger !!
+    		$hookmanager->initHooks(array('actioncommdao'));
+    		$parameters=array('actcomm'=>$this->id);
+    		$reshook=$hookmanager->executeHooks('insertExtraFields',$parameters,$this,$action);    // Note that $action and $object may have been modified by some hooks
+    		if (empty($reshook))
+    		{
+    			if (empty($conf->global->MAIN_EXTRAFIELDS_DISABLED)) // For avoid conflicts if trigger used
+    			{
+    				$result=$this->insertExtraFields();
+    				if ($result < 0)
+    				{
+    					$error++;
+    				}
+    			}
+    		}
+    		else if ($reshook < 0) $error++;
+    	}
+
+    	if (! $error)
+    	{
     		if (! $notrigger)
     		{
     			//// Call triggers
-    			//include_once DOL_DOCUMENT_ROOT . '/core/class/interfaces.class.php';
-    			//$interface=new Interfaces($this->db);
-    			//$result=$interface->run_triggers('RESOURCE_CREATE',$this,$user,$langs,$conf);
-    			//if ($result < 0) { $error++; $this->errors=$interface->errors; }
+    			include_once DOL_DOCUMENT_ROOT . '/core/class/interfaces.class.php';
+    			$interface=new Interfaces($this->db);
+    			$result=$interface->run_triggers('RESOURCE_CREATE',$this,$user,$langs,$conf);
+    			if ($result < 0) { $error++; $this->errors=$interface->errors; }
     			//// End call triggers
     		}
     	}
@@ -177,6 +205,13 @@ class Dolresource extends CommonObject
     			$this->note_private				=	$obj->note_private;
     			$this->type_label				=	$obj->type_label;
 
+    			// Retreive all extrafield for thirdparty
+    			// fetch optionals attributes and labels
+    			require_once(DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php');
+    			$extrafields=new ExtraFields($this->db);
+    			$extralabels=$extrafields->fetch_name_optionals_label($this->table_element,true);
+    			$this->fetch_optionals($this->id,$extralabels);
+
     		}
     		$this->db->free($resql);
 
@@ -197,63 +232,108 @@ class Dolresource extends CommonObject
      *  @param  int		$notrigger	 0=launch triggers after, 1=disable triggers
      *  @return int     		   	 <0 if KO, >0 if OK
      */
-    function update($user=null, $notrigger=0)
-    {
-    	global $conf, $langs;
-    	$error=0;
+	function update($user=null, $notrigger=0)
+	{
+		global $conf, $langs, $hookmanager;
+		$error=0;
 
-    	// Clean parameters
-    	if (isset($this->ref)) $this->ref=trim($this->ref);
-    	if (isset($this->fk_code_type_resource)) $this->fk_code_type_resource=trim($this->fk_code_type_resource);
-    	if (isset($this->description)) $this->description=trim($this->description);
+		// Clean parameters
+		if (isset($this->ref)) $this->ref=trim($this->ref);
+		if (isset($this->fk_code_type_resource)) $this->fk_code_type_resource=trim($this->fk_code_type_resource);
+		if (isset($this->description)) $this->description=trim($this->description);
 
-    	// Update request
-    	$sql = "UPDATE ".MAIN_DB_PREFIX.$this->table_element." SET";
-    	$sql.= " ref=".(isset($this->ref)?"'".$this->db->escape($this->ref)."'":"null").",";
-    	$sql.= " description=".(isset($this->description)?"'".$this->db->escape($this->description)."'":"null").",";
-    	$sql.= " fk_code_type_resource=".(isset($this->fk_code_type_resource)?"'".$this->db->escape($this->fk_code_type_resource)."'":"null").",";
-    	$sql.= " tms=".(dol_strlen($this->tms)!=0 ? "'".$this->db->idate($this->tms)."'" : 'null')."";
-    	$sql.= " WHERE rowid=".$this->id;
+		if (empty($this->oldcopy))
+		{
+			$org=new self($this->db);
+			$org->fetch($this->id);
+			$this->oldcopy=$org;
+		}
 
-    	$this->db->begin();
+		// Update request
+		$sql = "UPDATE ".MAIN_DB_PREFIX.$this->table_element." SET";
+		$sql.= " ref=".(isset($this->ref)?"'".$this->db->escape($this->ref)."'":"null").",";
+		$sql.= " description=".(isset($this->description)?"'".$this->db->escape($this->description)."'":"null").",";
+		$sql.= " fk_code_type_resource=".(isset($this->fk_code_type_resource)?"'".$this->db->escape($this->fk_code_type_resource)."'":"null").",";
+		$sql.= " tms=".(dol_strlen($this->tms)!=0 ? "'".$this->db->idate($this->tms)."'" : 'null')."";
+		$sql.= " WHERE rowid=".$this->id;
 
-    	dol_syslog(get_class($this)."::update", LOG_DEBUG);
-    	$resql = $this->db->query($sql);
-    	if (! $resql) { $error++; $this->errors[]="Error ".$this->db->lasterror(); }
+		$this->db->begin();
 
-    	if (! $error)
-    	{
-    		if (! $notrigger)
-    		{
-    			// Uncomment this and change MYOBJECT to your own tag if you
-    			// want this action calls a trigger.
+		dol_syslog(get_class($this)."::update", LOG_DEBUG);
+		$resql = $this->db->query($sql);
+		if (! $resql) { $error++; $this->errors[]="Error ".$this->db->lasterror(); }
 
-    			//// Call triggers
-    			//include_once DOL_DOCUMENT_ROOT . '/core/class/interfaces.class.php';
-    			//$interface=new Interfaces($this->db);
-    			//$result=$interface->run_triggers('MYOBJECT_MODIFY',$this,$user,$langs,$conf);
-    			//if ($result < 0) { $error++; $this->errors=$interface->errors; }
-    			//// End call triggers
-    		}
-    	}
+		if (! $error)
+		{
+			if (! $notrigger)
+			{
+				// Call trigger
+				$result=$this->call_trigger('RESOURCE_MODIFY',$user);
+				if ($result < 0) $error++;
+				// End call triggers
+			}
+		}
 
-    	// Commit or rollback
-    	if ($error)
-    	{
-    		foreach($this->errors as $errmsg)
-    		{
-    			dol_syslog(get_class($this)."::update ".$errmsg, LOG_ERR);
-    			$this->error.=($this->error?', '.$errmsg:$errmsg);
-    		}
-    		$this->db->rollback();
-    		return -1*$error;
-    	}
-    	else
-    	{
-    		$this->db->commit();
-    		return 1;
-    	}
-    }
+		if (! $error && (is_object($this->oldcopy) && $this->oldcopy->ref !== $this->ref))
+		{
+			// We remove directory
+			if (! empty($conf->resource->dir_output))
+			{
+				$olddir = $conf->resource->dir_output . "/" . dol_sanitizeFileName($this->oldcopy->ref);
+				$newdir = $conf->resource->dir_output . "/" . dol_sanitizeFileName($this->ref);
+				if (file_exists($olddir))
+				{
+					$res = @rename($olddir, $newdir);
+					if (! $res)
+					{
+						$langs->load("errors");
+						$this->error=$langs->trans('ErrorFailToRenameDir',$olddir,$newdir);
+						$error++;
+					}
+				}
+			}
+		}
+
+		if (! $error)
+		{
+			$action='update';
+
+			// Actions on extra fields (by external module or standard code)
+			// TODO le hook fait double emploi avec le trigger !!
+			$hookmanager->initHooks(array('actioncommdao'));
+			$parameters=array('actcomm'=>$this->id);
+			$reshook=$hookmanager->executeHooks('insertExtraFields',$parameters,$this,$action);    // Note that $action and $object may have been modified by some hooks
+			if (empty($reshook))
+			{
+				if (empty($conf->global->MAIN_EXTRAFIELDS_DISABLED)) // For avoid conflicts if trigger used
+				{
+					$result=$this->insertExtraFields();
+					if ($result < 0)
+					{
+						$error++;
+					}
+				}
+			}
+			else if ($reshook < 0) $error++;
+		}
+
+		// Commit or rollback
+		if ($error)
+		{
+			foreach($this->errors as $errmsg)
+			{
+				dol_syslog(get_class($this)."::update ".$errmsg, LOG_ERR);
+				$this->error.=($this->error?', '.$errmsg:$errmsg);
+			}
+			$this->db->rollback();
+			return -1*$error;
+		}
+		else
+		{
+			$this->db->commit();
+			return 1;
+		}
+	}
 
     /**
      *    Load object in memory from database
@@ -294,10 +374,12 @@ class Dolresource extends CommonObject
     			$this->mandatory		=	$obj->mandatory;
     			$this->fk_user_create	=	$obj->fk_user_create;
 
-				if($obj->resource_id && $obj->resource_type)
+				if($obj->resource_id && $obj->resource_type) {
 					$this->objresource = fetchObjectByElement($obj->resource_id,$obj->resource_type);
-				if($obj->element_id && $obj->element_type)
+				}
+				if($obj->element_id && $obj->element_type) {
 					$this->objelement = fetchObjectByElement($obj->element_id,$obj->element_type);
+				}
 
     		}
     		$this->db->free($resql);
@@ -318,44 +400,84 @@ class Dolresource extends CommonObject
      *    @param	int		$notrigger		Disable all triggers
      *    @return   int						>0 if OK, <0 if KO
      */
-    function delete($rowid, $notrigger=0)
-    {
-        global $user,$langs,$conf;
+	function delete($rowid, $notrigger=0)
+	{
+		global $user,$langs,$conf;
 
-        $error=0;
+		$error=0;
 
-        if (! $notrigger)
-        {
-            // Call trigger
-            $result=$this->call_trigger('RESOURCE_DELETE',$user);
-            if ($result < 0) return -1;
-            // End call triggers
-        }
+		$this->db->begin();
 
-        $sql = "DELETE FROM ".MAIN_DB_PREFIX.$this->table_element;
-        $sql.= " WHERE rowid =".$rowid;
+		$sql = "DELETE FROM ".MAIN_DB_PREFIX.$this->table_element;
+		$sql.= " WHERE rowid =".$rowid;
 
-        dol_syslog(get_class($this)."::delete", LOG_DEBUG);
-        if ($this->db->query($sql))
-        {
-            $sql = "DELETE FROM ".MAIN_DB_PREFIX."element_resources";
-            $sql.= " WHERE element_type='resource' AND resource_id =".$this->db->escape($rowid);
-            dol_syslog(get_class($this)."::delete", LOG_DEBUG);
-            if ($this->db->query($sql))
-            {
-                return 1;
-            }
-            else {
-                $this->error=$this->db->lasterror();
-                return -1;
-            }
-        }
-        else
-        {
-            $this->error=$this->db->lasterror();
-            return -1;
-        }
-    }
+		dol_syslog(get_class($this), LOG_DEBUG);
+		if ($this->db->query($sql))
+		{
+			$sql = "DELETE FROM ".MAIN_DB_PREFIX."element_resources";
+			$sql.= " WHERE element_type='resource' AND resource_id =".$this->db->escape($rowid);
+			dol_syslog(get_class($this)."::delete", LOG_DEBUG);
+			$resql=$this->db->query($sql);
+			if (!$resql)
+			{
+				$this->error=$this->db->lasterror();
+				$error++;
+			}
+		}
+		else
+		{
+			$this->error=$this->db->lasterror();
+			$error++;
+		}
+
+		// Removed extrafields
+		if (! $error) {
+			$result=$this->deleteExtraFields();
+			if ($result < 0)
+			{
+				$error++;
+				dol_syslog(get_class($this)."::delete error -3 ".$this->error, LOG_ERR);
+			}
+		}
+
+		if (! $notrigger)
+		{
+			// Call trigger
+			$result=$this->call_trigger('RESOURCE_DELETE',$user);
+			if ($result < 0) $error++;
+			// End call triggers
+		}
+
+		if (! $error)
+		{
+			// We remove directory
+			$ref = dol_sanitizeFileName($this->ref);
+			if (! empty($conf->resource->dir_output))
+			{
+				$dir = $conf->resource->dir_output . "/" . dol_sanitizeFileName($this->ref);
+				if (file_exists($dir))
+				{
+					$res=@dol_delete_dir_recursive($dir);
+					if (! $res)
+					{
+						$this->errors[] = 'ErrorFailToDeleteDir';
+						$error++;
+					}
+				}
+			}
+		}
+
+		if (! $error)
+		{
+			$this->db->commit();
+			return 1;
+		}
+		else
+		{
+			$this->db->rollback();
+			return -1;
+		}
+	}
 
     /**
      *	Load resource objects into $this->lines
@@ -377,9 +499,20 @@ class Dolresource extends CommonObject
     	$sql.= " t.description,";
     	$sql.= " t.fk_code_type_resource,";
     	$sql.= " t.tms,";
+
+    	require_once(DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php');
+    	$extrafields=new ExtraFields($this->db);
+    	$extralabels=$extrafields->fetch_name_optionals_label($this->table_element,true);
+    	if (is_array($extralabels) && count($extralabels)>0) {
+    		foreach($extralabels as $code=>$label) {
+    			$sql.= " ef.".$code." as extra_".$code.",";
+    		}
+    	}
+
     	$sql.= " ty.label as type_label";
     	$sql.= " FROM ".MAIN_DB_PREFIX.$this->table_element." as t";
     	$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."c_type_resource as ty ON ty.code=t.fk_code_type_resource";
+    	$sql.= " LEFT JOIN ".MAIN_DB_PREFIX.$this->table_element."_extrafields as ef ON ef.fk_object=t.rowid";
     	$sql.= " WHERE t.entity IN (".getEntity('resource',1).")";
 
     	//Manage filter
@@ -387,6 +520,9 @@ class Dolresource extends CommonObject
     		foreach($filter as $key => $value) {
     			if (strpos($key,'date')) {
     				$sql.= ' AND '.$key.' = \''.$this->db->idate($value).'\'';
+    			}
+    			elseif (strpos($key,'ef.')!==false){
+    				$sql.= $value;
     			}
     			else {
     				$sql.= ' AND '.$key.' LIKE \'%'.$value.'%\'';
@@ -418,6 +554,11 @@ class Dolresource extends CommonObject
     				$line->description				=	$obj->description;
     				$line->fk_code_type_resource	=	$obj->fk_code_type_resource;
     				$line->type_label				=	$obj->type_label;
+
+    				// Retreive all extrafield for thirdparty
+    				// fetch optionals attributes and labels
+
+    				$line->fetch_optionals($line->id,$extralabels);
 
     				$this->lines[] = $line;
     			}

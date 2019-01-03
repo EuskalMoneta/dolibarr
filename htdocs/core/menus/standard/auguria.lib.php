@@ -53,19 +53,21 @@ function print_auguria_menu($db,$atarget,$type_user,&$tabMenu,&$menu,$noout=0,$m
 
 	if (empty($noout)) print_start_menu_array_auguria();
 
+	$usemenuhider = (GETPOST('testmenuhider') || ! empty($conf->global->MAIN_TESTMENUHIDER));
+
 	// Show/Hide vertical menu
-	if ($mode != 'jmobile' && $mode != 'topnb' && (GETPOST('testmenuhider') || ! empty($conf->global->MAIN_TESTMENUHIDER)) && empty($conf->global->MAIN_OPTIMIZEFORTEXTBROWSER))
+	if ($mode != 'jmobile' && $mode != 'topnb' && $usemenuhider && empty($conf->global->MAIN_OPTIMIZEFORTEXTBROWSER))
 	{
 	    $showmode=1;
 	    $classname = 'class="tmenu menuhider"';
 	    $idsel='menu';
-	
+
 	    if (empty($noout)) print_start_menu_entry_auguria($idsel,$classname,$showmode);
 	    if (empty($noout)) print_text_menu_entry_auguria('', 1, '#', $id, $idsel, $classname, $atarget);
 	    if (empty($noout)) print_end_menu_entry_auguria($showmode);
 	    $menu->add('#', '', 0, $showmode, $atarget, "xxx", '');
 	}
-	
+
 	$num = count($newTabMenu);
 	for($i = 0; $i < $num; $i++)
 	{
@@ -75,7 +77,7 @@ function print_auguria_menu($db,$atarget,$type_user,&$tabMenu,&$menu,$noout=0,$m
 		if ($showmode == 1)
 		{
 			$url = $shorturl = $newTabMenu[$i]['url'];
-			
+
 			if (! preg_match("/^(http:\/\/|https:\/\/)/i",$newTabMenu[$i]['url']))
 			{
 			    $tmp=explode('?',$newTabMenu[$i]['url'],2);
@@ -83,11 +85,11 @@ function print_auguria_menu($db,$atarget,$type_user,&$tabMenu,&$menu,$noout=0,$m
 				$param = (isset($tmp[1])?$tmp[1]:'');
 
 				// Complete param to force leftmenu to '' to closed opend menu when we click on a link with no leftmenu defined.
-			    if ((! preg_match('/mainmenu/i',$param)) && (! preg_match('/leftmenu/i',$param)) && ! empty($newTabMenu[$i]['url'])) 
+			    if ((! preg_match('/mainmenu/i',$param)) && (! preg_match('/leftmenu/i',$param)) && ! empty($newTabMenu[$i]['url']))
 			    {
 			        $param.=($param?'&':'').'mainmenu='.$newTabMenu[$i]['url'].'&leftmenu=';
 			    }
-			    if ((! preg_match('/mainmenu/i',$param)) && (! preg_match('/leftmenu/i',$param)) && empty($newTabMenu[$i]['url'])) 
+			    if ((! preg_match('/mainmenu/i',$param)) && (! preg_match('/leftmenu/i',$param)) && empty($newTabMenu[$i]['url']))
 			    {
 			        $param.=($param?'&':'').'leftmenu=';
 			    }
@@ -134,7 +136,7 @@ function print_auguria_menu($db,$atarget,$type_user,&$tabMenu,&$menu,$noout=0,$m
 function print_start_menu_array_auguria()
 {
     global $conf;
-    
+
 	print '<div class="tmenudiv">';
 	print '<ul class="tmenu"'.(empty($conf->global->MAIN_OPTIMIZEFORTEXTBROWSER)?'':' title="Top menu"').'>';
 }
@@ -185,7 +187,7 @@ function print_text_menu_entry_auguria($text, $showmode, $url, $id, $idsel, $cla
 	}
 	if ($showmode == 2)
 	{
-		print '<div class="'.$id.' '.$idsel.' tmenudisabled"><span class="'.$id.'" id="mainmenuspan_'.$idsel.'"></span></div>';
+		print '<div class="'.$id.' '.$idsel.' topmenuimage tmenudisabled"><span class="'.$id.'" id="mainmenuspan_'.$idsel.'"></span></div>';
 		print '<a class="tmenudisabled" id="mainmenua_'.$idsel.'" href="#" title="'.dol_escape_htmltag($langs->trans("NotAllowed")).'">';
 		print '<span class="mainmenuaspan">';
 		print $text;
@@ -246,6 +248,9 @@ function print_left_auguria_menu($db,$menu_array_before,$menu_array_after,&$tabM
 	$mainmenu=($forcemainmenu?$forcemainmenu:$_SESSION["mainmenu"]);
 	$leftmenu=($forceleftmenu?'':(empty($_SESSION["leftmenu"])?'none':$_SESSION["leftmenu"]));
 
+	$usemenuhider = (GETPOST('testmenuhider') || ! empty($conf->global->MAIN_TESTMENUHIDER));
+	global $usemenuhider;
+
 	// Show logo company
 	if (empty($noout) && ! empty($conf->global->MAIN_SHOW_LOGO) && empty($conf->global->MAIN_OPTIMIZEFORTEXTBROWSER))
 	{
@@ -279,7 +284,7 @@ function print_left_auguria_menu($db,$menu_array_before,$menu_array_after,&$tabM
         print '</div>'."\n";
         print "<!-- End SearchForm -->\n";
 	}
-	
+
 	// We update newmenu with entries found into database
 	$menuArbo = new Menubase($db,'auguria');
 	$newmenu = $menuArbo->menuLeftCharger($newmenu,$mainmenu,$leftmenu,($user->societe_id?1:0),'auguria',$tabMenu);
@@ -307,7 +312,7 @@ function print_left_auguria_menu($db,$menu_array_before,$menu_array_after,&$tabM
 				$newmenu->add('/compta/bank/card.php?id='.$objp->rowid,$objp->label,1,$user->rights->banque->lire);
 				if ($objp->rappro && $objp->courant != Account::TYPE_CASH && empty($objp->clos))  // If not cash account and not closed and can be reconciliate
 				{
-					$newmenu->add('/compta/bank/rappro.php?account='.$objp->rowid,$langs->trans("Conciliate"),2,$user->rights->banque->consolidate);
+					$newmenu->add('/compta/bank/bankentries.php?id='.$objp->rowid,$langs->trans("Conciliate"),2,$user->rights->banque->consolidate);
 				}
 				$i++;
 			}
@@ -318,7 +323,7 @@ function print_left_auguria_menu($db,$menu_array_before,$menu_array_after,&$tabM
 
 	if (! empty($conf->accounting->enabled) && !empty($user->rights->accounting->mouvements->lire) && $mainmenu == 'accountancy') 	// Entry in accountancy journal for each bank account
 	{
-		$newmenu->add('',$langs->trans("Journaux"),0,$user->rights->accounting->comptarapport->lire,'','accountancy','accounting');
+		$newmenu->add('',$langs->trans("Journalization"),0,$user->rights->accounting->comptarapport->lire,'','accountancy','accountancy');
 
 		$sql = "SELECT rowid, label, accountancy_journal";
 		$sql.= " FROM ".MAIN_DB_PREFIX."bank_account";
@@ -336,7 +341,7 @@ function print_left_auguria_menu($db,$menu_array_before,$menu_array_after,&$tabM
 			while ($i < $numr)
 			{
 				$objp = $db->fetch_object($resql);
-				$newmenu->add('/accountancy/journal/bankjournal.php?id_account='.$objp->rowid,$langs->trans("Journal").' - '.$objp->label,1,$user->rights->accounting->comptarapport->lire,'','accountancy','accounting');
+				$newmenu->add('/accountancy/journal/bankjournal.php?id_account='.$objp->rowid, $langs->trans("Journal").' - '.$objp->label, 1, $user->rights->accounting->comptarapport->lire,'','accountancy','accountancy_journal');
 				$i++;
 			}
 		}
@@ -344,8 +349,9 @@ function print_left_auguria_menu($db,$menu_array_before,$menu_array_after,&$tabM
 		$db->free($resql);
 
 		// Add other journal
-		$newmenu->add("/accountancy/journal/sellsjournal.php?leftmenu=journal",$langs->trans("SellsJournal"),1,$user->rights->accounting->comptarapport->lire);
-		$newmenu->add("/accountancy/journal/purchasesjournal.php?leftmenu=journal",$langs->trans("PurchasesJournal"),1,$user->rights->accounting->comptarapport->lire);
+		$newmenu->add("/accountancy/journal/sellsjournal.php?leftmenu=journal",$langs->trans("SellsJournal"),1,$user->rights->accounting->comptarapport->lire,'','accountancy','accountancy_journal');
+		$newmenu->add("/accountancy/journal/purchasesjournal.php?leftmenu=journal",$langs->trans("PurchasesJournal"),1,$user->rights->accounting->comptarapport->lire,'','accountancy','accountancy_journal');
+		$newmenu->add("/accountancy/journal/expensereportsjournal.php?leftmenu=journal",$langs->trans("ExpenseReportsJournal"),1,$user->rights->accounting->comptarapport->lire,'','accountancy','accountancy_journal');
 	}
 
 	if ($conf->ftp->enabled && $mainmenu == 'ftp')	// Entry for FTP
@@ -395,7 +401,7 @@ function print_left_auguria_menu($db,$menu_array_before,$menu_array_after,&$tabM
 				for($j = ($i + 1); $j < $num; $j++)
 				{
 				    if (empty($menu_array[$j]['level'])) $lastopened=false;
-				}				
+				}
 				if ($altok % 2 == 0)
 				{
 					print '<div class="blockvmenuimpair'.($lastopened?' blockvmenulast':'').($altok == 1 ? ' blockvmenufirst':'').'">'."\n";
@@ -448,9 +454,12 @@ function print_left_auguria_menu($db,$menu_array_before,$menu_array_after,&$tabM
 			// Menu niveau > 0
 			if ($menu_array[$i]['level'] > 0)
 			{
-				if ($menu_array[$i]['enabled'])
+				$cssmenu = '';
+				if ($menu_array[$i]['url']) $cssmenu = ' menu_contenu'.dol_string_nospecial(preg_replace('/\.php.*$/','',$menu_array[$i]['url']));
+
+			    if ($menu_array[$i]['enabled'])
 				{
-					print '<div class="menu_contenu">'.$tabstring;
+					print '<div class="menu_contenu'.$cssmenu.'">'.$tabstring;
 					if ($menu_array[$i]['url']) print '<a class="vsmenu" href="'.$url.'"'.($menu_array[$i]['target']?' target="'.$menu_array[$i]['target'].'"':'').'>';
 					else print '<span class="vsmenu">';
 					print $menu_array[$i]['titre'];
@@ -462,7 +471,7 @@ function print_left_auguria_menu($db,$menu_array_before,$menu_array_after,&$tabM
 				}
 				else if ($showmenu)
 				{
-					print '<div class="menu_contenu">'.$tabstring.'<font class="vsmenudisabled vsmenudisabledmargin">'.$menu_array[$i]['titre'].'</font><br></div>'."\n";
+					print '<div class="menu_contenu'.$cssmenu.'">'.$tabstring.'<font class="vsmenudisabled vsmenudisabledmargin">'.$menu_array[$i]['titre'].'</font><br></div>'."\n";
 				}
 			}
 
@@ -474,7 +483,7 @@ function print_left_auguria_menu($db,$menu_array_before,$menu_array_after,&$tabM
 				if ($blockvmenuopened) { print "</div>\n"; $blockvmenuopened=false; }
 			}
 		}
-		
+
 		if ($altok) print '<div class="blockvmenuend"></div>';
 	}
 
@@ -487,7 +496,7 @@ function print_left_auguria_menu($db,$menu_array_before,$menu_array_after,&$tabM
 	        print '</div>'."\n";
 	        print "<!-- End Bookmarks -->\n";
 	}
-	
+
 	return count($menu_array);
 }
 

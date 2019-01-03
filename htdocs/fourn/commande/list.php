@@ -1,6 +1,6 @@
 <?php
 /* Copyright (C) 2001-2006 Rodolphe Quiedeville <rodolphe@quiedeville.org>
- * Copyright (C) 2004-2015 Laurent Destailleur  <eldy@users.sourceforge.net>
+ * Copyright (C) 2004-2016 Laurent Destailleur  <eldy@users.sourceforge.net>
  * Copyright (C) 2005-2012 Regis Houssin        <regis.houssin@capnetworks.com>
  * Copyright (C) 2013      Cédric Salvador      <csalvador@gpcsolutions.fr>
  * Copyright (C) 2014      Marcos García        <marcosgdf@gmail.com>
@@ -54,6 +54,8 @@ $orderday=GETPOST("orderday","int");
 $deliveryyear=GETPOST("deliveryyear","int");
 $deliverymonth=GETPOST("deliverymonth","int");
 $deliveryday=GETPOST("deliveryday","int");
+
+$sall=GETPOST('search_all', 'alphanohtml');
 $search_product_category=GETPOST('search_product_category','int');
 $search_ref=GETPOST('search_ref');
 $search_refsupp=GETPOST('search_refsupp');
@@ -69,7 +71,6 @@ $search_ht=GETPOST('search_ht');
 $search_ttc=GETPOST('search_ttc');
 $search_status=(GETPOST('search_status','alpha')!=''?GETPOST('search_status','alpha'):GETPOST('statut','alpha'));	// alpha and not intbecause it can be '6,7'
 $optioncss = GETPOST('optioncss','alpha');
-$sall=GETPOST('search_all');
 $socid = GETPOST('socid','int');
 $search_sale=GETPOST('search_sale','int');
 $search_total_ht=GETPOST('search_total_ht','alpha');
@@ -122,7 +123,7 @@ $search_array_options=$extrafields->getOptionalsFromPost($extralabels,'','search
 $fieldstosearchall = array(
     'cf.ref'=>'Ref',
     'cf.ref_supplier'=>'RefSupplierOrder',
-    //'pd.description'=>'Description',
+    'pd.description'=>'Description',
     's.nom'=>"ThirdParty",
     'cf.note_public'=>'NotePublic',
 );
@@ -131,7 +132,7 @@ if (empty($user->socid)) $fieldstosearchall["cf.note_private"]="NotePrivate";
 $checkedtypetiers=0;
 $arrayfields=array(
     'cf.ref'=>array('label'=>$langs->trans("Ref"), 'checked'=>1),
-    'cf.ref_supplier'=>array('label'=>$langs->trans("RefOrderSupplier"), 'checked'=>1, 'enabled'=>1),
+    'cf.ref_supplier'=>array('label'=>$langs->trans("RefOrderSupplierShort"), 'checked'=>1, 'enabled'=>1),
     'p.project_ref'=>array('label'=>$langs->trans("ProjectRef"), 'checked'=>0, 'enabled'=>1),
     'u.login'=>array('label'=>$langs->trans("AuthorRequest"), 'checked'=>1),
     's.nom'=>array('label'=>$langs->trans("ThirdParty"), 'checked'=>1),
@@ -302,7 +303,7 @@ if ($search_ref) $sql .= natural_search('cf.ref', $search_ref);
 if ($search_refsupp) $sql.= natural_search("cf.ref_supplier", $search_refsupp);
 if ($sall) $sql .= natural_search(array_keys($fieldstosearchall), $sall);
 if ($search_company) $sql .= natural_search('s.nom', $search_company);
-if ($search_request_author) $sql.= " AND u.login LIKE '%".$db->escape($search_request_author)."%'";
+if ($search_request_author) $sql.=natural_search(array('u.lastname','u.firstname','u.login'), $search_request_author) ;
 if ($billed != '' && $billed >= 0) $sql .= " AND cf.billed = ".$billed;
 
 //Required triple check because statut=0 means draft filter
@@ -374,7 +375,7 @@ $sql.=$hookmanager->resPrint;
 
 $sql.= $db->order($sortfield,$sortorder);
 
-$nbtotalofrecords = 0;
+$nbtotalofrecords = '';
 if (empty($conf->global->MAIN_DISABLE_FULL_SCANLIST))
 {
 	$result = $db->query($sql);
@@ -382,7 +383,6 @@ if (empty($conf->global->MAIN_DISABLE_FULL_SCANLIST))
 }
 
 $sql.= $db->plimit($limit+1, $offset);
-
 $resql = $db->query($sql);
 if ($resql)
 {
@@ -475,7 +475,7 @@ if ($resql)
         $moreforfilter.='<div class="divsearchfield">';
         $moreforfilter.=$langs->trans('IncludingProductWithTag'). ': ';
         $cate_arbo = $form->select_all_categories(Categorie::TYPE_PRODUCT, null, 'parent', null, null, 1);
-        $moreforfilter.=$form->selectarray('search_product_category', $cate_arbo, $search_product_category, 1, 0, 0, '', 0, 0, 0, 0, '', 1);
+        $moreforfilter.=$form->selectarray('search_product_category', $cate_arbo, $search_product_category, 1, 0, 0, '', 0, 0, 0, 0, 'maxwidth300', 1);
         $moreforfilter.='</div>';
     }
     $parameters=array();
@@ -492,7 +492,8 @@ if ($resql)
     $varpage=empty($contextpage)?$_SERVER["PHP_SELF"]:$contextpage;
     $selectedfields=$form->multiSelectArrayWithCheckbox('selectedfields', $arrayfields, $varpage);	// This also change content of $arrayfields
 
-	print '<table class="tagtable liste'.($moreforfilter?" listwithfilterbefore":"").'">'."\n";
+    print '<div class="div-table-responsive">';
+    print '<table class="tagtable liste'.($moreforfilter?" listwithfilterbefore":"").'">'."\n";
 
 	print '<tr class="liste_titre">';
 	if (! empty($arrayfields['cf.ref']['checked']))            print_liste_field_titre($arrayfields['cf.ref']['label'],$_SERVER["PHP_SELF"],"cf.ref","",$param,'',$sortfield,$sortorder);
@@ -505,9 +506,9 @@ if ($resql)
 	if (! empty($arrayfields['state.nom']['checked']))         print_liste_field_titre($arrayfields['state.nom']['label'],$_SERVER["PHP_SELF"],"state.nom","",$param,'',$sortfield,$sortorder);
 	if (! empty($arrayfields['country.code_iso']['checked']))  print_liste_field_titre($arrayfields['country.code_iso']['label'],$_SERVER["PHP_SELF"],"country.code_iso","",$param,'align="center"',$sortfield,$sortorder);
 	if (! empty($arrayfields['typent.code']['checked']))       print_liste_field_titre($arrayfields['typent.code']['label'],$_SERVER["PHP_SELF"],"typent.code","",$param,'align="center"',$sortfield,$sortorder);
-	if (! empty($arrayfields['cf.fk_author']['checked']))      print_liste_field_titre($arrayfields['cf.fk_author']['label'],$_SERVER["PHP_SELF"],"u.login","",$param,'',$sortfield,$sortorder);
+	if (! empty($arrayfields['cf.fk_author']['checked']))      print_liste_field_titre($arrayfields['cf.fk_author']['label'],$_SERVER["PHP_SELF"],"cf.fk_author","",$param,'',$sortfield,$sortorder);
 	if (! empty($arrayfields['cf.date_commande']['checked']))  print_liste_field_titre($arrayfields['cf.date_commande']['label'],$_SERVER["PHP_SELF"],"cf.date_commande","",$param,'align="center"',$sortfield,$sortorder);
-	if (! empty($arrayfields['cf.date_delivery']['checked']))  print_liste_field_titre($arrayfields['cf.date_delivery']['label'],$_SERVER["PHP_SELF"],'cf.date_livraison','',$param, 'align="right"',$sortfield,$sortorder);
+	if (! empty($arrayfields['cf.date_delivery']['checked']))  print_liste_field_titre($arrayfields['cf.date_delivery']['label'],$_SERVER["PHP_SELF"],'cf.date_livraison','',$param, 'align="center"',$sortfield,$sortorder);
 	if (! empty($arrayfields['cf.total_ht']['checked']))       print_liste_field_titre($arrayfields['cf.total_ht']['label'],$_SERVER["PHP_SELF"],"cf.total_ht","",$param,'align="right"',$sortfield,$sortorder);
 	if (! empty($arrayfields['cf.total_vat']['checked']))      print_liste_field_titre($arrayfields['cf.total_vat']['label'],$_SERVER["PHP_SELF"],"cf.tva","",$param,'align="right"',$sortfield,$sortorder);
 	if (! empty($arrayfields['cf.total_ttc']['checked']))      print_liste_field_titre($arrayfields['cf.total_ttc']['label'],$_SERVER["PHP_SELF"],"cf.total_ttc","",$param,'align="right"',$sortfield,$sortorder);
@@ -675,7 +676,7 @@ if ($resql)
 	// Status billed
 	if (! empty($arrayfields['cf.billed']['checked']))
 	{
-		print '<td align="center">';
+		print '<td class="liste_titre" align="center">';
 		print $form->selectyesno('billed', $billed, 1, 0, 1);
 		print '</td>';
 	}
@@ -717,11 +718,23 @@ if ($resql)
 		// Ref
         if (! empty($arrayfields['cf.ref']['checked']))
         {
-			print '<td class="nobordernopadding nowrap">';
+            print '<td class="nowrap">';
+
+            print '<table class="nobordernopadding"><tr class="nocellnopadd">';
+            // Picto + Ref
+            print '<td class="nobordernopadding nowrap">';
     	    print $objectstatic->getNomUrl(1);
+    	    print '</td>';
+    	    // Warning
+    	    //print '<td style="min-width: 20px" class="nobordernopadding nowrap">';
+    	    //print '</td>';
+    	    // Other picto tool
+    	    print '<td width="16" align="right" class="nobordernopadding hideonsmartphone">';
 			$filename=dol_sanitizeFileName($obj->ref);
 			$filedir=$conf->fournisseur->dir_output.'/commande' . '/' . dol_sanitizeFileName($obj->ref);
 			print $formfile->getDocumentsLink($objectstatic->element, $filename, $filedir);
+			print '</td></tr></table>';
+
 			print '</td>'."\n";
             if (! $i) $totalarray['nbfield']++;
         }
@@ -747,7 +760,7 @@ if ($resql)
 		$userstatic->firstname = $obj->firstname;
 		$userstatic->login = $obj->login;
 		$userstatic->photo = $obj->photo;
-		if (! empty($arrayfields['s.nom']['checked']))
+		if (! empty($arrayfields['u.login']['checked']))
 		{
 		    print "<td>";
 		    if ($userstatic->id) print $userstatic->getNomUrl(1);
@@ -910,6 +923,7 @@ if ($resql)
 		$i++;
 	}
 	print "</table>\n";
+	print '</div>';
 	print "</form>\n";
 
 	if (! empty($conf->facture->enable)) print '<br>'.img_help(1,'').' '.$langs->trans("ToBillSeveralOrderSelectCustomer", $langs->transnoentitiesnoconv("CreateInvoiceForThisCustomer")).'<br>';

@@ -14,18 +14,19 @@ DeleteIntervention=Eliminar intervención
 ValidateIntervention=Validar intervención
 ModifyIntervention=Modificar intervención
 DeleteInterventionLine=Eliminar línea de intervención
-CloneIntervention=Clone intervention
+CloneIntervention=Cerrar intervención
 ConfirmDeleteIntervention=¿Está seguro de querer eliminar esta intervención?
 ConfirmValidateIntervention=¿Está seguro de querer validar esta intervención bajo la referencia <b>%s</b>?
 ConfirmModifyIntervention=¿Está seguro de querer modificar esta intervención?
-ConfirmDeleteInterventionLine=¿Está seguro de querer eliminar esta linea?
-ConfirmCloneIntervention=Are you sure you want to clone this intervention ?
+ConfirmDeleteInterventionLine==¿Está seguro de querer eliminar esta linea?
+ConfirmCloneIntervention=¿Está seguro de querer clonar esta intervención?
 NameAndSignatureOfInternalContact=Nombre y firma del participante:
 NameAndSignatureOfExternalContact=Nombre y firma del cliente:
 DocumentModelStandard=Documento modelo estándar para intervenciones
 InterventionCardsAndInterventionLines=Fichas y líneas de intervención
 InterventionClassifyBilled=Clasificar "Facturada"
 InterventionClassifyUnBilled=Clasificar "No facturada"
+InterventionClassifyDone=Clasificar "Realizado"
 StatusInterInvoiced=Facturado
 ShowIntervention=Mostrar intervención
 SendInterventionRef=Envío de la intervención %s
@@ -40,11 +41,13 @@ InterventionDeletedInDolibarr=Intervención %s eliminada
 InterventionsArea=Área intervenciones
 DraftFichinter=Intervenciones borrador
 LastModifiedInterventions=Últimas %s intervenciones modificadas
+FichinterToProcess=Intervenciones a procesar
 ##### Types de contacts #####
 TypeContact_fichinter_external_CUSTOMER=Contacto cliente seguimiento intervención
 # Modele numérotation
 PrintProductsOnFichinter=Imprimir también líneas de tipo "producto" (no solamente servicios) en las fichas de intervención
 PrintProductsOnFichinterDetails=Intervenciones generadas desde pedidos
+UseServicesDurationOnFichinter=Usar la duración de los servicios para las intervenciones generadas de de los pedidos
 InterventionStatistics=Estadísticas de intervenciones
 NbOfinterventions=Nº de fichas de intervención
 NumberOfInterventionsByMonth=Nº de fichas de intervención por mes (fecha de validación)

@@ -589,9 +589,12 @@ class DoliDBMysqli extends DoliDB
         $sql="SHOW TABLES FROM ".$database." ".$like.";";
         //print $sql;
         $result = $this->query($sql);
-        while($row = $this->fetch_row($result))
+        if ($result)
         {
-            $listtables[] = $row[0];
+            while($row = $this->fetch_row($result))
+            {
+                $listtables[] = $row[0];
+            }
         }
         return $listtables;
     }
@@ -610,9 +613,12 @@ class DoliDBMysqli extends DoliDB
 
         dol_syslog($sql,LOG_DEBUG);
         $result = $this->query($sql);
-        while($row = $this->fetch_row($result))
+        if ($result)
         {
-            $infotables[] = $row;
+            while($row = $this->fetch_row($result))
+            {
+                $infotables[] = $row;
+            }
         }
         return $infotables;
     }
@@ -804,7 +810,7 @@ class DoliDBMysqli extends DoliDB
     /**
 	 * 	Create a user and privileges to connect to database (even if database does not exists yet)
 	 *
-	 *	@param	string	$dolibarr_main_db_host 		Ip serveur
+	 *	@param	string	$dolibarr_main_db_host 		Ip server or '%'
 	 *	@param	string	$dolibarr_main_db_user 		Nom user a creer
 	 *	@param	string	$dolibarr_main_db_pass 		Mot de passe user a creer
 	 *	@param	string	$dolibarr_main_db_name		Database name where user must be granted
@@ -848,7 +854,7 @@ class DoliDBMysqli extends DoliDB
     }
 
     /**
-     *	Return charset used to store data in database
+     *	Return charset used to store data in current database (same result than using SELECT default_character_set_name FROM information_schema.SCHEMATA WHERE schema_name = "databasename";)
      *
      *	@return		string		Charset
      */
@@ -891,7 +897,7 @@ class DoliDBMysqli extends DoliDB
     }
 
     /**
-     *	Return collation used in database
+     *	Return collation used in current database
      *
      *	@return		string		Collation value
      */

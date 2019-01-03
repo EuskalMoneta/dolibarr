@@ -71,6 +71,13 @@ if (! defined('DONOTLOADCONF') && file_exists($conffile) && filesize($conffile) 
 
 		if (empty($dolibarr_main_db_type)) $dolibarr_main_db_type='mysql';	// For backward compatibility
 
+		//Mysql driver support has been removed in favor of mysqli
+		if ($dolibarr_main_db_type == 'mysql') {
+			$dolibarr_main_db_type = 'mysqli';
+		}
+
+		if (empty($dolibarr_main_db_port) && ($dolibarr_main_db_type=='mysqli')) $dolibarr_main_db_port='3306'; // For backward compatibility
+
 		// Clean parameters
 		$dolibarr_main_data_root        =isset($dolibarr_main_data_root)?trim($dolibarr_main_data_root):'';
 		$dolibarr_main_url_root         =isset($dolibarr_main_url_root)?trim($dolibarr_main_url_root):'';
@@ -142,7 +149,7 @@ if (empty($conf->db->user)) $conf->db->user='';
 
 // Defini objet langs
 $langs = new Translate('..',$conf);
-if (GETPOST('lang')) $langs->setDefaultLang(GETPOST('lang'));
+if (GETPOST('lang', 'aZ09')) $langs->setDefaultLang(GETPOST('lang', 'aZ09'));
 else $langs->setDefaultLang('auto');
 
 $bc[false]=' class="bg1"';
@@ -177,7 +184,7 @@ function conf($dolibarr_main_document_root)
 	$conf->db->user = trim($dolibarr_main_db_user);
 	$conf->db->pass = trim($dolibarr_main_db_pass);
 
-	if (empty($conf->db->dolibarr_main_db_collation)) $conf->db->dolibarr_main_db_collation='utf8_general_ci';
+	if (empty($conf->db->dolibarr_main_db_collation)) $conf->db->dolibarr_main_db_collation='utf8_unicode_ci';
 
 	return 1;
 }

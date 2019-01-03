@@ -1,7 +1,8 @@
 #!/usr/bin/env php
 <?php
-/* Copyright (c) 2015 Tommaso Basilici    <t.basilici@19.coop>
- * Copyright (c) 2015 Laurent Destailleur <eldy@destailleur.fr>
+/* Copyright (c) 2015 Tommaso Basilici          <t.basilici@19.coop>
+ * Copyright (c) 2015 Laurent Destailleur       <eldy@destailleur.fr>
+ * Copyright (C) 2014-2016  Juanjo Menent       <jmenent@2byte.es>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -299,6 +300,8 @@ if ((! empty($_REQUEST['unused']) && $_REQUEST['unused'] == 'true') || (isset($a
 	    if (preg_match('/^BoxTitleLatest/', $value)) $qualifiedforclean=0;
 	    // install.lang
 	    if (preg_match('/^KeepDefaultValues/', $value)) $qualifiedforclean=0;
+		// mail.lang
+	    if (preg_match('/MailingModuleDesc/i', $value)) $qualifiedforclean=0;
 	    // main.lang
 	    if (preg_match('/^Duration/', $value)) $qualifiedforclean=0;
 	    if (preg_match('/^FormatDate/', $value)) $qualifiedforclean=0;
@@ -363,7 +366,7 @@ if ((! empty($_REQUEST['unused']) && $_REQUEST['unused'] == 'true') || (isset($a
 	{
         $filetosave='/tmp/'.($argv[2]?$argv[2]:"").'notused.lang';
         print "Strings in en_US that are never used are saved into file ".$filetosave.":\n";
-        file_put_contents($filetosave, join("",$unused));
+        file_put_contents($filetosave, implode("",$unused));
         print "To remove from original file, run command :\n";
         if (($argv[2]?$argv[2]:"")) print 'cd htdocs/langs/en_US; mv '.($argv[2]?$argv[2]:"")." ".($argv[2]?$argv[2]:"").".tmp; ";
         print "diff ".($argv[2]?$argv[2]:"").".tmp ".$filetosave." | grep \< | cut  -b 3- > ".($argv[2]?$argv[2]:"");

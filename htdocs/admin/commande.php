@@ -45,7 +45,7 @@ if (! $user->admin) accessforbidden();
 $action = GETPOST('action','alpha');
 $value = GETPOST('value','alpha');
 $label = GETPOST('label','alpha');
-$scandir = GETPOST('scandir','alpha');
+$scandir = GETPOST('scan_dir','alpha');
 $type = 'order';
 
 
@@ -273,11 +273,11 @@ else if ($action == 'set_WAREHOUSE_ASK_WAREHOUSE_DURING_ORDER')
  * View
  */
 
+$form=new Form($db);
+
 $dirmodels=array_merge(array('/'),(array) $conf->modules_parts['models']);
 
 llxHeader("",$langs->trans("OrdersSetup"));
-
-$form=new Form($db);
 
 $linkback='<a href="'.DOL_URL_ROOT.'/admin/modules.php">'.$langs->trans("BackToModuleList").'</a>';
 print load_fiche_titre($langs->trans("OrdersSetup"),$linkback,'title_setup');
@@ -490,7 +490,7 @@ foreach ($dirmodels as $reldir)
 	                            else
 	                            {
 	                                print '<td align="center">'."\n";
-	                                print '<a href="'.$_SERVER["PHP_SELF"].'?action=set&value='.$name.'&amp;scandir='.$module->scandir.'&amp;label='.urlencode($module->name).'">'.img_picto($langs->trans("Disabled"),'switch_off').'</a>';
+	                                print '<a href="'.$_SERVER["PHP_SELF"].'?action=set&value='.$name.'&amp;scan_dir='.$module->scandir.'&amp;label='.urlencode($module->name).'">'.img_picto($langs->trans("Disabled"),'switch_off').'</a>';
 	                                print "</td>";
 	                            }
 
@@ -502,7 +502,7 @@ foreach ($dirmodels as $reldir)
 	                            }
 	                            else
 	                            {
-	                                print '<a href="'.$_SERVER["PHP_SELF"].'?action=setdoc&value='.$name.'&amp;scandir='.$module->scandir.'&amp;label='.urlencode($module->name).'" alt="'.$langs->trans("Default").'">'.img_picto($langs->trans("Disabled"),'off').'</a>';
+	                                print '<a href="'.$_SERVER["PHP_SELF"].'?action=setdoc&value='.$name.'&amp;scan_dir='.$module->scandir.'&amp;label='.urlencode($module->name).'" alt="'.$langs->trans("Default").'">'.img_picto($langs->trans("Disabled"),'off').'</a>';
 	                            }
 	                            print '</td>';
 
@@ -554,7 +554,6 @@ print "<br>";
 
 /*
  * Other options
- *
  */
 
 print load_fiche_titre($langs->trans("OtherOptions"),'','');

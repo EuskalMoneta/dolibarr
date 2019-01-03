@@ -24,13 +24,13 @@
  *	\brief      Dolibarr home page
  */
 
-define('NOCSRFCHECK',1);	// This is login page. We must be able to go on it from another web site.
+define('NOCSRFCHECK',1);	// This is main home and login page. We must be able to go on it from another web site.
 
 require 'main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
 
 // If not defined, we select menu "home"
-$_GET['mainmenu']=GETPOST('mainmenu', 'alpha')?GETPOST('mainmenu', 'alpha'):'home';
+$_GET['mainmenu']=GETPOST('mainmenu', 'aZ09')?GETPOST('mainmenu', 'aZ09'):'home';
 $action=GETPOST('action');
 
 $hookmanager->initHooks(array('index'));
@@ -55,10 +55,10 @@ if (count($conf->modules) <= (empty($conf->global->MAIN_MIN_NB_ENABLED_MODULE_FO
 if (GETPOST('addbox'))	// Add box (when submit is done from a form when ajax disabled)
 {
 	require_once DOL_DOCUMENT_ROOT.'/core/class/infobox.class.php';
-	$zone=GETPOST('areacode');
-	$userid=GETPOST('userid');
-	$boxorder=GETPOST('boxorder');
-	$boxorder.=GETPOST('boxcombo');
+	$zone=GETPOST('areacode', 'aZ09');
+	$userid=GETPOST('userid', 'int');
+	$boxorder=GETPOST('boxorder', 'aZ09');
+	$boxorder.=GETPOST('boxcombo', 'aZ09');
 
 	$result=InfoBox::saveboxorder($db,$zone,$boxorder,$userid);
 }
@@ -178,8 +178,8 @@ if (empty($user->societe_id))
 		! empty($conf->supplier_order->enabled) && $user->rights->fournisseur->commande->lire && empty($conf->global->SOCIETE_DISABLE_SUPPLIERS_ORDERS_STATS),
 		! empty($conf->supplier_invoice->enabled) && $user->rights->fournisseur->facture->lire && empty($conf->global->SOCIETE_DISABLE_SUPPLIERS_INVOICES_STATS),
 		! empty($conf->supplier_proposal->enabled) && $user->rights->supplier_proposal->lire && empty($conf->global->SOCIETE_DISABLE_SUPPLIERS_PROPOSAL_STATS),
-	    ! empty($conf->expensereport->enabled) && $user->rights->expensereport->lire,
-	    ! empty($conf->projet->enabled) && $user->rights->projet->lire
+	    ! empty($conf->projet->enabled) && $user->rights->projet->lire,
+	    ! empty($conf->expensereport->enabled) && $user->rights->expensereport->lire
 	    );
 	    // Class file containing the method load_state_board for each line
 	    $includes=array(
@@ -199,8 +199,8 @@ if (empty($user->societe_id))
     	    DOL_DOCUMENT_ROOT."/fourn/class/fournisseur.commande.class.php",
     	    DOL_DOCUMENT_ROOT."/fourn/class/fournisseur.facture.class.php",
     	    DOL_DOCUMENT_ROOT."/supplier_proposal/class/supplier_proposal.class.php",
-	        DOL_DOCUMENT_ROOT."/expensereport/class/expensereport.class.php",
-            DOL_DOCUMENT_ROOT."/projet/class/project.class.php" 
+            DOL_DOCUMENT_ROOT."/projet/class/project.class.php", 
+	        DOL_DOCUMENT_ROOT."/expensereport/class/expensereport.class.php"
 	    );
 	    // Name class containing the method load_state_board for each line
 	    $classes=array('User',
@@ -219,8 +219,8 @@ if (empty($user->societe_id))
 	                   'CommandeFournisseur',
 	                   'FactureFournisseur',
             	       'SupplierProposal',
-	                   'ExpenseReport',
-	                   'Project'
+	                   'Project',
+	                   'ExpenseReport'
 	    );
 	    // Cle array returned by the method load_state_board for each line
 	    $keys=array('users',
@@ -239,8 +239,8 @@ if (empty($user->societe_id))
 	                'supplier_orders',
 	                'supplier_invoices',
 	                'askprice',
-	                'expensereports',
-	                'projects'
+	                'projects',
+	                'expensereports'
 	    );
 	    // Dashboard Icon lines
 	    $icons=array('user',
@@ -259,8 +259,8 @@ if (empty($user->societe_id))
 	                 'order',
 	                 'bill',
 	                 'propal',
-					 'trip',
-	                 'project'
+	                 'project',
+					 'trip'
 	    );
 	    // Translation keyword
 	    $titres=array("Users",
@@ -279,29 +279,29 @@ if (empty($user->societe_id))
 	                  "SuppliersOrders",
                       "SuppliersInvoices",
 	                  "SupplierProposalShort",
-					  "ExpenseReports",
-	                  "Projects"
+	                  "Projects",
+					  "ExpenseReports"
 	    );
 	    // Dashboard Link lines
 	    $links=array(
 	        DOL_URL_ROOT.'/user/index.php',
-    	    DOL_URL_ROOT.'/societe/list.php?type=c',
-    	    DOL_URL_ROOT.'/societe/list.php?type=p',
-    	    DOL_URL_ROOT.'/societe/list.php?type=f',
-    	    DOL_URL_ROOT.'/contact/list.php',
+    	    DOL_URL_ROOT.'/societe/list.php?type=c&mainmenu=companies',
+    	    DOL_URL_ROOT.'/societe/list.php?type=p&mainmenu=companies',
+    	    DOL_URL_ROOT.'/societe/list.php?type=f&mainmenu=companies',
+    	    DOL_URL_ROOT.'/contact/list.php?mainmenu=companies',
     	    DOL_URL_ROOT.'/adherents/list.php?statut=1&mainmenu=members',
     	    DOL_URL_ROOT.'/product/list.php?type=0&mainmenu=products',
     	    DOL_URL_ROOT.'/product/list.php?type=1&mainmenu=products',
-    	    DOL_URL_ROOT.'/comm/propal/list.php?mainmenu=commercial',
-    	    DOL_URL_ROOT.'/commande/list.php?mainmenu=commercial',
-    	    DOL_URL_ROOT.'/compta/facture/list.php?mainmenu=accountancy',
-    	    DOL_URL_ROOT.'/contrat/list.php',
-    	    DOL_URL_ROOT.'/fichinter/list.php',
-    	    DOL_URL_ROOT.'/fourn/commande/list.php',
-	        DOL_URL_ROOT.'/fourn/facture/list.php',
-	        DOL_URL_ROOT.'/supplier_proposal/list.php',
-    		DOL_URL_ROOT.'/expensereport/list.php?mainmenu=hrm',
-	        DOL_URL_ROOT.'/projet/list.php?mainmenu=project'
+    	    DOL_URL_ROOT.'/comm/propal/list.php?mainmenu=commercial&leftmenu=propals',
+    	    DOL_URL_ROOT.'/commande/list.php?mainmenu=commercial&leftmenu=orders',
+    	    DOL_URL_ROOT.'/compta/facture/list.php?mainmenu=accountancy&leftmenu=customers_bills',
+    	    DOL_URL_ROOT.'/contrat/list.php?mainmenu=commercial&leftmenu=contracts',
+    	    DOL_URL_ROOT.'/fichinter/list.php?mainmenu=commercial&leftmenu=ficheinter',
+    	    DOL_URL_ROOT.'/fourn/commande/list.php?mainmenu=commercial&leftmenu=orders_suppliers',
+	        DOL_URL_ROOT.'/fourn/facture/list.php?mainmenu=accountancy&leftmenu=suppliers_bills',
+	        DOL_URL_ROOT.'/supplier_proposal/list.php?mainmenu=commercial&leftmenu=',
+	        DOL_URL_ROOT.'/projet/list.php?mainmenu=project',
+    		DOL_URL_ROOT.'/expensereport/list.php?mainmenu=hrm&leftmenu=expensereport'
 	    );
 	    // Translation lang files
 	    $langfile=array("users",
@@ -311,15 +311,17 @@ if (empty($user->societe_id))
 	                    "companies",
 	                    "members",
 	                    "products",
-	                    "produts",
+	                    "products",
 	                    "propal",
 	                    "orders",
             	        "bills",
-            	        "supplier_proposal",
 						"contracts",
 						"interventions",
-						"trips",
-	                    "projects"
+	                    "bills",
+	                    "bills",
+	                    "supplier_proposal",
+	                    "projects",
+						"trips"
 	    );
 
 
@@ -546,14 +548,15 @@ foreach($valid_dashboardlines as $board)
     $boxwork.= '<td align="right">';
     //if ($board->nbtodolate > 0)
     //{
-        $textlate = $langs->trans("Late").' = '.$langs->trans("DateReference").' > '.$langs->trans("DateToday").' '.(ceil($board->warning_delay) >= 0 ? '+' : '').ceil($board->warning_delay).' '.$langs->trans("days");
-        $boxwork.= '<a title="'.dol_escape_htmltag($textlate).'" class="dashboardlineindicatorlate'.($board->nbtodolate>0?' dashboardlineko':' dashboardlineok').'" href="'.$board->url.'"><span class="dashboardlineindicatorlate'.($board->nbtodolate>0?' dashboardlineko':' dashboardlineok').'">';
-        $boxwork.= $board->nbtodolate;
-        $boxwork.= '</span></a>';
+    $textlate = $langs->trans("NActionsLate",$board->nbtodolate);
+    $textlate .= ' ('.$langs->trans("Late").' = '.$langs->trans("DateReference").' > '.$langs->trans("DateToday").' '.(ceil($board->warning_delay) >= 0 ? '+' : '').ceil($board->warning_delay).' '.$langs->trans("days").')';
+    $boxwork.= '<a title="'.dol_escape_htmltag($textlate).'" class="dashboardlineindicatorlate'.($board->nbtodolate>0?' dashboardlineko':' dashboardlineok').'" href="'.$board->url.'"><span class="dashboardlineindicatorlate'.($board->nbtodolate>0?' dashboardlineko':' dashboardlineok').'">';
+    $boxwork.= $board->nbtodolate;
+    $boxwork.= '</span></a>';
     //}
     $boxwork.='</td>';
     $boxwork.='<td align="left">';
-    if ($board->nbtodolate > 0) $boxwork.=img_picto($langs->trans("NActionsLate",$board->nbtodolate).' (>'.ceil($board->warning_delay).' '.$langs->trans("days").')',"warning");
+    if ($board->nbtodolate > 0) $boxwork.=img_picto($textlate,"warning");
     else $boxwork.='&nbsp;';
     $boxwork.='</td>';
     /*print '<td class="nowrap" align="right">';

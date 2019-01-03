@@ -1,7 +1,7 @@
 <?php
 /* Copyright (C) 2002-2007 Rodolphe Quiedeville <rodolphe@quiedeville.org>
  * Copyright (C) 2003      Xavier Dutoit        <doli@sydesy.com>
- * Copyright (C) 2004-2013 Laurent Destailleur  <eldy@users.sourceforge.net>
+ * Copyright (C) 2004-2017 Laurent Destailleur  <eldy@users.sourceforge.net>
  * Copyright (C) 2004      Sebastien Di Cintio  <sdicintio@ressource-toi.org>
  * Copyright (C) 2004      Benoit Mortier       <benoit.mortier@opensides.be>
  * Copyright (C) 2005-2011 Regis Houssin        <regis.houssin@capnetworks.com>
@@ -31,7 +31,7 @@
  */
 
 if (! defined('DOL_APPLICATION_TITLE')) define('DOL_APPLICATION_TITLE','Dolibarr');
-if (! defined('DOL_VERSION')) define('DOL_VERSION','4.0.6');
+if (! defined('DOL_VERSION')) define('DOL_VERSION','5.0.7');                         // a.b.c-alpha, a.b.c-beta, a.b.c-rcX or a.b.c
 
 if (! defined('EURO')) define('EURO',chr(128));
 
@@ -143,10 +143,13 @@ $dolibarr_main_document_root=trim($dolibarr_main_document_root);
 $dolibarr_main_document_root_alt=(empty($dolibarr_main_document_root_alt)?'':trim($dolibarr_main_document_root_alt));
 
 if (empty($dolibarr_main_db_port)) $dolibarr_main_db_port=0;		// Pour compatibilite avec anciennes configs, si non defini, on prend 'mysql'
-if (empty($dolibarr_main_db_type)) $dolibarr_main_db_type='mysql';	// Pour compatibilite avec anciennes configs, si non defini, on prend 'mysql'
+if (empty($dolibarr_main_db_type)) $dolibarr_main_db_type='mysqli';	// Pour compatibilite avec anciennes configs, si non defini, on prend 'mysql'
+
+// Mysql driver support has been removed in favor of mysqli
+if ($dolibarr_main_db_type == 'mysql') $dolibarr_main_db_type = 'mysqli';
 if (empty($dolibarr_main_db_prefix)) $dolibarr_main_db_prefix='llx_';
-if (empty($dolibarr_main_db_character_set)) $dolibarr_main_db_character_set=($dolibarr_main_db_type=='mysql'?'utf8':'');		// Old installation
-if (empty($dolibarr_main_db_collation)) $dolibarr_main_db_collation=($dolibarr_main_db_type=='mysql'?'utf8_general_ci':'');	// Old installation
+if (empty($dolibarr_main_db_character_set)) $dolibarr_main_db_character_set=($dolibarr_main_db_type=='mysqli'?'utf8':'');		// Old installation
+if (empty($dolibarr_main_db_collation)) $dolibarr_main_db_collation=($dolibarr_main_db_type=='mysqli'?'utf8_unicode_ci':'');	// Old installation
 if (empty($dolibarr_main_db_encryption)) $dolibarr_main_db_encryption=0;
 if (empty($dolibarr_main_db_cryptkey)) $dolibarr_main_db_cryptkey='';
 if (empty($dolibarr_main_limit_users)) $dolibarr_main_limit_users=0;
@@ -160,12 +163,18 @@ if (empty($multicompany_force_entity)) $multicompany_force_entity=0; // To force
 // Security: CSRF protection
 // This test check if referrer ($_SERVER['HTTP_REFERER']) is same web site than Dolibarr ($_SERVER['HTTP_HOST'])
 // when we post forms (we allow GET to allow direct link to access a particular page).
-if (! defined('NOCSRFCHECK') && empty($dolibarr_nocsrfcheck) && ! empty($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] != 'GET' && ! empty($_SERVER['HTTP_HOST']) && ! empty($_SERVER['HTTP_REFERER']) && ! preg_match('/'.preg_quote($_SERVER['HTTP_HOST'],'/').'/i', $_SERVER['HTTP_REFERER']))
+// Note about $_SERVER[HTTP_HOST/SERVER_NAME]: http://shiflett.org/blog/2006/mar/server-name-versus-http-host
+if (! defined('NOCSRFCHECK') && empty($dolibarr_nocsrfcheck))
 {
-	//print 'HTTP_POST='.$_SERVER['HTTP_HOST'].' HTTP_REFERER='.$_SERVER['HTTP_REFERER'];
-	print "Access refused by CSRF protection in main.inc.php.\n";
-	print "If you access your server behind a proxy using url rewriting, you might add the line \$dolibarr_nocsrfcheck=1 into your conf.php file.\n";
-	die;
+    if (! empty($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] != 'GET' && ! empty($_SERVER['HTTP_HOST'])
+    && (empty($_SERVER['HTTP_REFERER']) || ! preg_match('/'.preg_quote($_SERVER['HTTP_HOST'],'/').'/i', $_SERVER['HTTP_REFERER'])))
+    {
+    	//print 'NOCSRFCHECK='.defined('NOCSRFCHECK').' REQUEST_METHOD='.$_SERVER['REQUEST_METHOD'].' HTTP_POST='.$_SERVER['HTTP_HOST'].' HTTP_REFERER='.$_SERVER['HTTP_REFERER'];
+    	print "Access refused by CSRF protection in main.inc.php. Referer of form is outside server that serve the POST.\n";
+        print "If you access your server behind a proxy using url rewriting, you might check that all HTTP header is propagated (or add the line \$dolibarr_nocsrfcheck=1 into your conf.php file).\n";
+    	die;
+    }
+    // Another test is done later on token if option MAIN_SECURITY_CSRF_WITH_TOKEN is on.
 }
 if (empty($dolibarr_main_db_host))
 {
@@ -179,7 +188,6 @@ if (empty($dolibarr_main_url_root))
 	print 'You must add this parameter with your full Dolibarr root Url (Example: http://myvirtualdomain/ or http://mydomain/mydolibarrurl/)'."\n";
 	die;
 }
-if (empty($dolibarr_main_db_type)) $dolibarr_main_db_type='mysql';   // Pour compatibilite avec anciennes configs, si non defini, on prend 'mysql'
 if (empty($dolibarr_main_data_root))
 {
 	// Si repertoire documents non defini, on utilise celui par defaut

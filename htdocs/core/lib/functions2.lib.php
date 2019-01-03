@@ -5,6 +5,7 @@
  * Copyright (C) 2014       Marcos García               <marcosgdf@gmail.com>
  * Copyright (C) 2015       Ferran Marcet               <fmarcet@2byte.es>
  * Copyright (C) 2015-2016  Raphaël Doursenaud          <rdoursenaud@gpcsolutions.fr>
+ * Copyright (C) 2017       Juanjo Menent               <jmenent@2byte.es>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -119,12 +120,14 @@ function dolGetModulesDirs($subdir='')
  *	@param		Translate	$outputlangs		Output lang to use to autodetect output format if setup not done
  *	@return		string							Default paper format code
  */
-function dol_getDefaultFormat($outputlangs='')
+function dol_getDefaultFormat(Translate $outputlangs = null)
 {
     global $langs;
 
     $selected='EUA4';
-    if (empty($outputlangs) || ! is_object($outputlangs)) $outputlangs=$langs;
+    if (!$outputlangs) {
+    	$outputlangs=$langs;
+    }
 
     if ($outputlangs->defaultlang == 'ca_CA') $selected='CAP4';        // Canada
     if ($outputlangs->defaultlang == 'en_US') $selected='USLetter';    // US
@@ -226,14 +229,14 @@ function dol_print_object_info($object, $usetable=0)
         else print ': ';
         if (is_object($object->user_creation))
         {
-        	if ($object->user_creation->id) print $object->user_creation->getNomUrl(1);
+        	if ($object->user_creation->id) print $object->user_creation->getNomUrl(1, '', 0, 0, 0);
         	else print $langs->trans("Unknown");
         }
         else
         {
             $userstatic=new User($db);
             $userstatic->fetch($object->user_creation_id ? $object->user_creation_id : $object->user_creation);
-            if ($userstatic->id) print $userstatic->getNomUrl(1);
+            if ($userstatic->id) print $userstatic->getNomUrl(1, '', 0, 0, 0);
         	else print $langs->trans("Unknown");
         }
         if ($usetable) print '</td></tr>';
@@ -262,14 +265,14 @@ function dol_print_object_info($object, $usetable=0)
         else print ': ';
         if (is_object($object->user_modification))
         {
-        	if ($object->user_modification->id) print $object->user_modification->getNomUrl(1);
+        	if ($object->user_modification->id) print $object->user_modification->getNomUrl(1, '', 0, 0, 0);
         	else print $langs->trans("Unknown");
         }
         else
         {
             $userstatic=new User($db);
             $userstatic->fetch($object->user_modification_id ? $object->user_modification_id : $object->user_modification);
-            if ($userstatic->id) print $userstatic->getNomUrl(1);
+            if ($userstatic->id) print $userstatic->getNomUrl(1, '', 0, 0, 0);
         	else print $langs->trans("Unknown");
         }
         if ($usetable) print '</td></tr>';
@@ -298,14 +301,14 @@ function dol_print_object_info($object, $usetable=0)
         else print ': ';
         if (is_object($object->user_validation))
         {
-            if ($object->user_validation->id) print $object->user_validation->getNomUrl(1);
+            if ($object->user_validation->id) print $object->user_validation->getNomUrl(1, '', 0, 0, 0);
         	else print $langs->trans("Unknown");
         }
         else
         {
             $userstatic=new User($db);
             $userstatic->fetch($object->user_validation_id ? $object->user_validation_id : $object->user_validation);
-			if ($userstatic->id) print $userstatic->getNomUrl(1);
+			if ($userstatic->id) print $userstatic->getNomUrl(1, '', 0, 0, 0);
         	else print $langs->trans("Unknown");
         }
         if ($usetable) print '</td></tr>';
@@ -334,14 +337,14 @@ function dol_print_object_info($object, $usetable=0)
         else print ': ';
         if (is_object($object->user_approve))
         {
-            if ($object->user_approve->id) print $object->user_approve->getNomUrl(1);
+            if ($object->user_approve->id) print $object->user_approve->getNomUrl(1, '', 0, 0, 0);
         	else print $langs->trans("Unknown");
         }
         else
         {
             $userstatic=new User($db);
             $userstatic->fetch($object->user_approve_id ? $object->user_approve_id : $object->user_approve);
-			if ($userstatic->id) print $userstatic->getNomUrl(1);
+			if ($userstatic->id) print $userstatic->getNomUrl(1, '', 0, 0, 0);
         	else print $langs->trans("Unknown");
         }
         if ($usetable) print '</td></tr>';
@@ -370,7 +373,7 @@ function dol_print_object_info($object, $usetable=0)
         else print ': ';
         $userstatic=new User($db);
         $userstatic->fetch($object->user_approve_id2);
-        if ($userstatic->id) print $userstatic->getNomUrl(1);
+        if ($userstatic->id) print $userstatic->getNomUrl(1, '', 0, 0, 0);
         else print $langs->trans("Unknown");
         if ($usetable) print '</td></tr>';
         else print '<br>';
@@ -398,14 +401,14 @@ function dol_print_object_info($object, $usetable=0)
         else print ': ';
         if (is_object($object->user_cloture))
         {
-			if ($object->user_cloture->id) print $object->user_cloture->getNomUrl(1);
+			if ($object->user_cloture->id) print $object->user_cloture->getNomUrl(1, '', 0, 0, 0);
         	else print $langs->trans("Unknown");
         }
         else
         {
             $userstatic=new User($db);
             $userstatic->fetch($object->user_cloture);
-			if ($userstatic->id) print $userstatic->getNomUrl(1);
+			if ($userstatic->id) print $userstatic->getNomUrl(1, '', 0, 0, 0);
         	else print $langs->trans("Unknown");
         }
         if ($usetable) print '</td></tr>';
@@ -434,14 +437,14 @@ function dol_print_object_info($object, $usetable=0)
         else print ': ';
         if (is_object($object->user_rappro))
         {
-			if ($object->user_rappro->id) print $object->user_rappro->getNomUrl(1);
+			if ($object->user_rappro->id) print $object->user_rappro->getNomUrl(1, '', 0, 0, 0);
         	else print $langs->trans("Unknown");
         }
         else
         {
             $userstatic=new User($db);
             $userstatic->fetch($object->user_rappro);
-			if ($userstatic->id) print $userstatic->getNomUrl(1);
+			if ($userstatic->id) print $userstatic->getNomUrl(1, '', 0, 0, 0);
         	else print $langs->trans("Unknown");
         }
         if ($usetable) print '</td></tr>';
@@ -1054,13 +1057,13 @@ function get_next_value($db,$mask,$table,$field,$where='',$objsoc='',$date='',$m
 		{
 	        $numFinal = preg_replace('/\{yyyy\}/i',date("Y",$date)+$yearoffset, $numFinal);
         	$numFinal = preg_replace('/\{yy\}/i',  date("y",$date)+$yearoffset, $numFinal);
-        	$numFinal = preg_replace('/\{y\}/i',   substr(date("y",$date),2,1)+$yearoffset, $numFinal);
+        	$numFinal = preg_replace('/\{y\}/i',   substr(date("y",$date),1,1)+$yearoffset, $numFinal);
 		}
 		else	// we want yyyy to be current year
 		{
         	$numFinal = preg_replace('/\{yyyy\}/i',date("Y",$date), $numFinal);
         	$numFinal = preg_replace('/\{yy\}/i',  date("y",$date), $numFinal);
-        	$numFinal = preg_replace('/\{y\}/i',   substr(date("y",$date),2,1), $numFinal);
+        	$numFinal = preg_replace('/\{y\}/i',   substr(date("y",$date),1,1), $numFinal);
 		}
         $numFinal = preg_replace('/\{mm\}/i',  date("m",$date), $numFinal);
         $numFinal = preg_replace('/\{dd\}/i',  date("d",$date), $numFinal);
@@ -1437,7 +1440,7 @@ function dol_print_reduction($reduction,$langs)
     }
     else
     {
-        $string = $reduction.'%';
+        $string = price($reduction).'%';
     }
 
     return $string;
@@ -1522,7 +1525,7 @@ function getListOfModels($db,$type,$maxfilenamelength=0)
 
             // If this generation module needs to scan a directory, then description field is filled
             // with the constant that contains list of directories to scan (COMPANY_ADDON_PDF_ODT_PATH, ...).
-            if (! empty($obj->description))	// List of directories to scan is defined
+            if (! empty($obj->description))	// A list of directories to scan is defined
             {
                 include_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
 
@@ -1560,7 +1563,19 @@ function getListOfModels($db,$type,$maxfilenamelength=0)
             }
             else
             {
-                $liste[$obj->id]=$obj->label?$obj->label:$obj->lib;
+                if ($type == 'member' && $obj->lib == 'standard')   // Special case, if member template, we add variant per format
+                {
+                    global $_Avery_Labels;
+                    include_once DOL_DOCUMENT_ROOT.'/core/lib/format_cards.lib.php';
+                    foreach($_Avery_Labels as $key => $val)
+                    {
+                        $liste[$obj->id.':'.$key]=($obj->label?$obj->label:$obj->lib).' '.$val['name'];
+                    }
+                }
+                else    // Common usage
+                {
+                    $liste[$obj->id]=$obj->label?$obj->label:$obj->lib;
+                }
             }
             $i++;
         }
@@ -1618,7 +1633,7 @@ function dol_buildlogin($lastname,$firstname)
 /**
  *  Return array to use for SoapClient constructor
  *
- *  @return     param
+ *  @return     array
  */
 function getSoapParams()
 {
@@ -1972,6 +1987,11 @@ function getElementProperties($element_type)
         $module='resource';
         $subelement='dolresource';
     }
+    if ($element_type == 'propaldet') {
+        $classpath = 'comm/propal/class';
+        $module='propal';
+        $subelement='propaleligne';
+    }
     $classfile = strtolower($subelement);
     $classname = ucfirst($subelement);
 
@@ -1988,13 +2008,14 @@ function getElementProperties($element_type)
 
 /**
  * Fetch an object from its id and element_type
- * Inclusion classes is automatic
+ * Inclusion of classes is automatic
  *
  * @param	int     	$element_id 	Element id
  * @param	string  	$element_type 	Element type
+ * @param	ref     	$element_ref 	Element ref (Use this if element_id but not both)
  * @return 	int|object 					object || 0 || -1 if error
  */
-function fetchObjectByElement($element_id, $element_type)
+function fetchObjectByElement($element_id, $element_type, $element_ref='')
 {
     global $conf;
 	global $db,$conf;
@@ -2004,11 +2025,11 @@ function fetchObjectByElement($element_id, $element_type)
     {
         dol_include_once('/'.$element_prop['classpath'].'/'.$element_prop['classfile'].'.class.php');
 
-		$objectstat = new $element_prop['classname']($db);
-		$ret = $objectstat->fetch($element_id);
+		$objecttmp = new $element_prop['classname']($db);
+		$ret = $objecttmp->fetch($element_id, $element_ref);
 		if ($ret >= 0)
 		{
-			return $objectstat;
+			return $objecttmp;
 		}
 	}
 	return 0;

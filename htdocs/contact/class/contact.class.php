@@ -41,7 +41,8 @@ class Contact extends CommonObject
 	public $table_element='socpeople';
 	protected $ismultientitymanaged = 1;	// 0=No test on entity, 1=Test with field entity, 2=Test with link by societe
 
-	var $civility_id;  // In fact we store civility_code
+	var $civility_id;      // In fact we store civility_code
+	var $civility_code;
 	var $address;
 	var $zip;
 	var $town;
@@ -555,8 +556,6 @@ class Contact extends CommonObject
 		    $this->db->rollback();
 		    return -$error;
 		}
-		
-		return $result;
 	}
 
 
@@ -614,6 +613,7 @@ class Contact extends CommonObject
 				$this->ref				= $obj->rowid;
 				$this->ref_ext			= $obj->ref_ext;
 				$this->civility_id		= $obj->civility_id;
+				$this->civility_code	= $obj->civility_id;
 				$this->lastname			= $obj->lastname;
 				$this->firstname		= $obj->firstname;
 				$this->address			= $obj->address;
@@ -661,11 +661,7 @@ class Contact extends CommonObject
 				$this->import_key		= $obj->import_key;
 				
 				// Define gender according to civility
-				if(in_array($this->civility_id, array('MR'))) {
-					$this->gender = 'man';
-				} else if(in_array($this->civility_id, array('MME','MLE'))) {
-					$this->gender = 'woman';
-				}
+				$this->setGenderFromCivility();
 
 				// Search Dolibarr user linked to this contact
 				$sql = "SELECT u.rowid ";
@@ -737,6 +733,21 @@ class Contact extends CommonObject
 	}
 
 
+	/**
+	 * Set property ->gender from property ->civility_id
+	 * 
+	 * @return void
+	 */
+	function setGenderFromCivility()
+	{
+	    unset($this->gender);
+    	if (in_array($this->civility_id, array('MR'))) {
+    	    $this->gender = 'man';
+    	} else if(in_array($this->civility_id, array('MME','MLE'))) {
+    	    $this->gender = 'woman';
+    	}
+	}	
+	
 	/**
 	 *  Load number of elements the contact is used as a link for
 	 *  ref_facturation
@@ -982,39 +993,53 @@ class Contact extends CommonObject
 	 */
 	function getNomUrl($withpicto=0,$option='',$maxlen=0,$moreparam='')
 	{
-		global $conf, $langs;
+		global $conf, $langs, $hookmanager;
 
 		$result='';
-        $label = '<u>' . $langs->trans("ShowContact") . '</u>';
-        $label.= '<br><b>' . $langs->trans("Name") . ':</b> '.$this->getFullName($langs);
-        //if ($this->civility_id) $label.= '<br><b>' . $langs->trans("Civility") . ':</b> '.$this->civility_id;		// TODO Translate cibilty_id code
-        if (! empty($this->poste)) $label.= '<br><b>' . $langs->trans("Poste") . ':</b> '.$this->poste;
-        $label.= '<br><b>' . $langs->trans("EMail") . ':</b> '.$this->email;
-        $phonelist=array();
-        if ($this->phone_pro) $phonelist[]=$this->phone_pro;
-        if ($this->phone_mobile) $phonelist[]=$this->phone_mobile;
-        if ($this->phone_perso) $phonelist[]=$this->phone_perso;
-        $label.= '<br><b>' . $langs->trans("Phone") . ':</b> '.join(', ',$phonelist);
-        $label.= '<br><b>' . $langs->trans("Address") . ':</b> '.dol_format_address($this, 1, ' ', $langs);
+	        $label = '<u>' . $langs->trans("ShowContact") . '</u>';
+	        $label.= '<br><b>' . $langs->trans("Name") . ':</b> '.$this->getFullName($langs);
+	        //if ($this->civility_id) $label.= '<br><b>' . $langs->trans("Civility") . ':</b> '.$this->civility_id;		// TODO Translate cibilty_id code
+	        if (! empty($this->poste)) $label.= '<br><b>' . $langs->trans("Poste") . ':</b> '.$this->poste;
+	        $label.= '<br><b>' . $langs->trans("EMail") . ':</b> '.$this->email;
+	        $phonelist=array();
+	        if ($this->phone_pro) $phonelist[]=$this->phone_pro;
+	        if ($this->phone_mobile) $phonelist[]=$this->phone_mobile;
+	        if ($this->phone_perso) $phonelist[]=$this->phone_perso;
+	        $label.= '<br><b>' . $langs->trans("Phone") . ':</b> '.join(', ',$phonelist);
+	        $label.= '<br><b>' . $langs->trans("Address") . ':</b> '.dol_format_address($this, 1, ' ', $langs);
+	
+	        $link = '<a href="'.DOL_URL_ROOT.'/contact/card.php?id='.$this->id.$moreparam.'"';
+	        $linkclose="";
+	    	if (! empty($conf->global->MAIN_OPTIMIZEFORTEXTBROWSER)) 
+	        {
+	            $label=$langs->trans("ShowContact");
+	            $linkclose.=' alt="'.dol_escape_htmltag($label, 1).'"'; 
+	        }
+	       	$linkclose.= ' title="'.dol_escape_htmltag($label, 1).'"';
+	       	$linkclose.= ' class="classfortooltip">';
 
-        $link = '<a href="'.DOL_URL_ROOT.'/contact/card.php?id='.$this->id.$moreparam.'"';
-    	if (! empty($conf->global->MAIN_OPTIMIZEFORTEXTBROWSER)) 
-        {
-            $label=$langs->trans("ShowContact");
-            $link.=' alt="'.dol_escape_htmltag($label, 1).'"'; 
-        }
-        $link.= ' title="'.dol_escape_htmltag($label, 1).'"';
-        $link.= ' class="classfortooltip">';
+		if (! is_object($hookmanager))
+		{
+			include_once DOL_DOCUMENT_ROOT.'/core/class/hookmanager.class.php';
+			$hookmanager=new HookManager($this->db);
+		}
+		$hookmanager->initHooks(array('contactdao'));
+		$parameters=array('id'=>$this->id);
+		$reshook=$hookmanager->executeHooks('getnomurltooltip',$parameters,$this,$action);    // Note that $action and $object may have been modified by some hooks
+		if ($reshook > 0) $linkclose = $hookmanager->resPrint;
+
+		$link.=$linkclose;
+		
 		$linkend='</a>';
-
+	
 		if ($option == 'xxx')
 		{
 			$link = '<a href="'.DOL_URL_ROOT.'/contact/card.php?id='.$this->id.$moreparam.'" title="'.dol_escape_htmltag($label, 1).'" class="classfortooltip">';
 			$linkend='</a>';
 		}
-
-        if ($withpicto) $result.=($link.img_object($label, 'contact', 'class="classfortooltip"').$linkend.' ');
-		$result.=$link.($maxlen?dol_trunc($this->getFullName($langs),$maxlen):$this->getFullName($langs)).$linkend;
+	
+	        if ($withpicto) $result.=($link.img_object($label, 'contact', 'class="classfortooltip"').$linkend.' ');
+			$result.=$link.($maxlen?dol_trunc($this->getFullName($langs),$maxlen):$this->getFullName($langs)).$linkend;
 		return $result;
 	}
 
@@ -1067,24 +1092,24 @@ class Contact extends CommonObject
 		}
 		elseif ($mode == 2)
 		{
-			if ($statut==0 || $statut==5) return img_picto($langs->trans('Disabled'),'statut5').' '.$langs->trans('Disabled');
-			elseif ($statut==1 || $statut==4) return img_picto($langs->trans('Enabled'),'statut4').' '.$langs->trans('Enabled');
+			if ($statut==0 || $statut==5) return img_picto($langs->trans('Disabled'),'statut5', 'class="pictostatus"').' '.$langs->trans('Disabled');
+			elseif ($statut==1 || $statut==4) return img_picto($langs->trans('Enabled'),'statut4', 'class="pictostatus"').' '.$langs->trans('Enabled');
 
 		}
 		elseif ($mode == 3)
 		{
-			if ($statut==0 || $statut==5) return img_picto($langs->trans('Disabled'),'statut5');
-			elseif ($statut==1 || $statut==4) return img_picto($langs->trans('Enabled'),'statut4');
+			if ($statut==0 || $statut==5) return img_picto($langs->trans('Disabled'),'statut5', 'class="pictostatus"');
+			elseif ($statut==1 || $statut==4) return img_picto($langs->trans('Enabled'),'statut4', 'class="pictostatus"');
 		}
 		elseif ($mode == 4)
 		{
-			if ($statut==0) return img_picto($langs->trans('Disabled'),'statut5').' '.$langs->trans('Disabled');
-			elseif ($statut==1 || $statut==4) return img_picto($langs->trans('Enabled'),'statut4').' '.$langs->trans('Enabled');
+			if ($statut==0) return img_picto($langs->trans('Disabled'),'statut5', 'class="pictostatus"').' '.$langs->trans('Disabled');
+			elseif ($statut==1 || $statut==4) return img_picto($langs->trans('Enabled'),'statut4', 'class="pictostatus"').' '.$langs->trans('Enabled');
 		}
 		elseif ($mode == 5)
 		{
-			if ($statut==0 || $statut==5) return '<span class="hideonsmartphone">'.$langs->trans('Disabled').' </span>'.img_picto($langs->trans('Disabled'),'statut5');
-			elseif ($statut==1 || $statut==4) return '<span class="hideonsmartphone">'.$langs->trans('Enabled').' </span>'.img_picto($langs->trans('Enabled'),'statut4');
+			if ($statut==0 || $statut==5) return '<span class="hideonsmartphone">'.$langs->trans('Disabled').' </span>'.img_picto($langs->trans('Disabled'),'statut5', 'class="pictostatus"');
+			elseif ($statut==1 || $statut==4) return '<span class="hideonsmartphone">'.$langs->trans('Enabled').' </span>'.img_picto($langs->trans('Enabled'),'statut4', 'class="pictostatus"');
 		}
 	}
 

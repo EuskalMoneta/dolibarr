@@ -33,6 +33,7 @@ require_once DOL_DOCUMENT_ROOT.'/core/modules/export/modules_export.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
 
 $langs->load("exports");
+$langs->load("other");
 $langs->load("users");
 $langs->load("companies");
 $langs->load("projects");
@@ -60,6 +61,8 @@ $entitytoicon = array(
     'other'        => 'generic',
 	'account'      => 'account',
 	'product'      => 'product',
+    'virtualproduct'=>'product',
+	'subproduct'   => 'product',
     'warehouse'    => 'stock',
     'batch'        => 'stock',
 	'category'     => 'category',
@@ -92,6 +95,8 @@ $entitytolang = array(
 	'account'      => 'BankTransactions',
 	'payment'      => 'Payment',
 	'product'      => 'Product',
+	'virtualproduct'  => 'AssociatedProducts',
+	'subproduct'      => 'SubProduct',
     'service'      => 'Service',
     'stock'        => 'Stock',
     'batch'        => 'Batch',
@@ -243,6 +248,13 @@ if ($step == 1 || $action == 'cleanselect')
 
 if ($action == 'builddoc')
 {
+    $max_execution_time_for_export = (empty($conf->global->EXPORT_MAX_EXECUTION_TIME)?300:$conf->global->EXPORT_MAX_EXECUTION_TIME);    // 5mn if not defined
+    $max_time = @ini_get("max_execution_time");
+    if ($max_time && $max_time < $max_execution_time_for_export)
+    {
+        @ini_set("max_execution_time", $max_execution_time_for_export); // This work only if safe mode is off. also web servers has timeout of 300
+    }
+    
     // Build export file
 	$result=$objexport->build_file($user, GETPOST('model','alpha'), $datatoexport, $array_selected, $array_filtervalue);
 	if ($result < 0)
@@ -583,7 +595,7 @@ if ($step == 2 && $datatoexport)
         {
             // Selected fields
             print '<td>&nbsp;</td>';
-            print '<td align="center"><a href="'.$_SERVER["PHP_SELF"].'?step=2&datatoexport='.$datatoexport.'&action=unselectfield&field='.$code.'">'.img_left('default', 0, 'style="max-width: 20px"').'</a></td>';
+            print '<td align="center"><a class="reposition" href="'.$_SERVER["PHP_SELF"].'?step=2&datatoexport='.$datatoexport.'&action=unselectfield&field='.$code.'">'.img_left('default', 0, 'style="max-width: 20px"').'</a></td>';
             print '<td>';
             //print $text.'-'.$htmltext."<br>";
             print $form->textwithpicto($text,$htmltext);
@@ -598,7 +610,7 @@ if ($step == 2 && $datatoexport)
 			print $form->textwithpicto($text,$htmltext);
 			//print ' ('.$code.')';
             print '</td>';
-            print '<td align="center"><a href="'.$_SERVER["PHP_SELF"].'?step=2&datatoexport='.$datatoexport.'&action=selectfield&field='.$code.'">'.img_right('default', 0, 'style="max-width: 20px"').'</a></td>';
+            print '<td align="center"><a class="reposition" href="'.$_SERVER["PHP_SELF"].'?step=2&datatoexport='.$datatoexport.'&action=selectfield&field='.$code.'">'.img_right('default', 0, 'style="max-width: 20px"').'</a></td>';
             print '<td>&nbsp;</td>';
         }
 
@@ -638,7 +650,14 @@ if ($step == 2 && $datatoexport)
 
 if ($step == 3 && $datatoexport)
 {
-	llxHeader('',$langs->trans("NewExport"),'EN:Module_Exports_En|FR:Module_Exports|ES:M&oacute;dulo_Exportaciones');
+    if (count($array_selected) < 1)      // This occurs when going back to page after sessecion expired
+    {
+        // Switch to step 2
+        header("Location: ".DOL_URL_ROOT.'/exports/export.php?step=2&datatoexport='.$datatoexport);
+        exit;
+    }
+
+    llxHeader('',$langs->trans("NewExport"),'EN:Module_Exports_En|FR:Module_Exports|ES:M&oacute;dulo_Exportaciones');
 
 	/*
 	 * Affichage onglets
@@ -792,6 +811,13 @@ if ($step == 3 && $datatoexport)
 
 if ($step == 4 && $datatoexport)
 {
+    if (count($array_selected) < 1)     // This occurs when going back to page after sessecion expired
+    {
+        // Switch to step 2
+        header("Location: ".DOL_URL_ROOT.'/exports/export.php?step=2&datatoexport='.$datatoexport);
+        exit;
+    }
+    
     asort($array_selected);
 
     llxHeader('',$langs->trans("NewExport"),'EN:Module_Exports_En|FR:Module_Exports|ES:M&oacute;dulo_Exportaciones');
@@ -1017,6 +1043,13 @@ if ($step == 4 && $datatoexport)
 
 if ($step == 5 && $datatoexport)
 {
+    if (count($array_selected) < 1)      // This occurs when going back to page after sessecion expired
+    {
+        // Switch to step 2
+        header("Location: ".DOL_URL_ROOT.'/exports/export.php?step=2&datatoexport='.$datatoexport);
+        exit;
+    }
+    
 	asort($array_selected);
 
     llxHeader('',$langs->trans("NewExport"),'EN:Module_Exports_En|FR:Module_Exports|ES:M&oacute;dulo_Exportaciones');
@@ -1148,6 +1181,7 @@ if ($step == 5 && $datatoexport)
 
     print '</div>';
 
+    
     print '<table width="100%">';
 
     if ($sqlusedforexport && $user->admin)
@@ -1158,17 +1192,18 @@ if ($step == 5 && $datatoexport)
     }
 	print '</table>';
 
-    print '<table width="100%"><tr><td width="50%">';
+	
+	print '<div class="fichecenter"><div class="fichehalfleft">';
 
     if (! is_dir($conf->export->dir_temp)) dol_mkdir($conf->export->dir_temp);
 
     // Affiche liste des documents
     // NB: La fonction show_documents rescanne les modules qd genallowed=1, sinon prend $liste
-    $formfile->show_documents('export','',$upload_dir,$_SERVER["PHP_SELF"].'?step=5&datatoexport='.$datatoexport,$liste,1,(! empty($_POST['model'])?$_POST['model']:'csv'),1,1);
+    print $formfile->showdocuments('export','',$upload_dir,$_SERVER["PHP_SELF"].'?step=5&datatoexport='.$datatoexport,$liste,1,(! empty($_POST['model'])?$_POST['model']:'csv'),1,1);
 
-    print '</td><td width="50%">&nbsp;</td></tr>';
-    print '</table>';
-
+    print '</div><div class="fichehalfright"><div class="ficheaddleft">';
+    
+    print '</div></div></div>';
 }
 
 print '<br>';

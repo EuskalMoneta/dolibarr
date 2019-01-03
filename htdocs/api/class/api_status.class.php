@@ -17,6 +17,7 @@
 
 require_once DOL_DOCUMENT_ROOT . '/core/lib/functions.lib.php';
 
+
 /**
  * API that gives the status of the Dolibarr instance.
  *

@@ -7,7 +7,7 @@ Permission23103 = Planlı iş sil
 Permission23104 = Planlı iş yürüt
 # Admin
 CronSetup= Planlı iş yönetimi ayarları
-URLToLaunchCronJobs=Gerekliyse, Cron işlerini denetleyen ve başlatan İnternet adresi
+URLToLaunchCronJobs=URL to check and launch qualified cron jobs
 OrToLaunchASpecificJob=Ya da özel bir işi denetlemek ve başlatmak için
 KeyForCronAccess=Cron işlerini başlatacak URL için güvenlik anahtarı
 FileToLaunchCronJobs=Cron işlerini başlatacak komut satırı
@@ -17,14 +17,14 @@ CronMethodDoesNotExists=Sınıf %s hiçbir %s yöntemi içermiyor
 # Menu
 EnabledAndDisabled=Etkin ve engelli
 # Page list
-CronLastOutput=Son çalıştırma çıktısı
-CronLastResult=Son sonuç kodu
+CronLastOutput=Latest run output
+CronLastResult=Latest result code
 CronCommand=Komut
 CronList=Planlı işler
 CronDelete=Planlı işleri sil
-CronConfirmDelete=Bu planlı işleri silmek istediğinizden emin misiniz?
+CronConfirmDelete=Are you sure you want to delete these scheduled jobs?
 CronExecute=Planlı işleri yükle
-CronConfirmExecute=Bu planlı işleri şimdi yürütmek istediğinizden emin misiniz?
+CronConfirmExecute=Are you sure you want to execute these scheduled jobs now?
 CronInfo=Planlı iş modülü planlanmış işlerin yürütülmesini sağlar
 CronTask=İş
 CronNone=Hiçbiri
@@ -76,3 +76,4 @@ UseMenuModuleToolsToAddCronJobs=Planlı işleri görmek ve düzenlemek için "Gi
 JobDisabled=İş engellendi
 MakeLocalDatabaseDumpShort=Yerel veritabanı yedeklemesi
 MakeLocalDatabaseDump=Yerel bir veritabanı dökümü oluştur
+WarningCronDelayed=Attention, for performance purpose, whatever is next date of execution of active jobs, your jobs may be delayed to a maximum of %s hours before being run.

@@ -97,7 +97,7 @@ class modPrinting extends DolibarrModules
         $this->rights[$r][0] = 64001;
         $this->rights[$r][1] = 'DirectPrint';
         $this->rights[$r][2] = 'r';
-        $this->rights[$r][3] = 1;
+        $this->rights[$r][3] = 0;
         $this->rights[$r][4] = 'read';
 
         // Main menu entries
@@ -111,7 +111,7 @@ class modPrinting extends DolibarrModules
                                 'url'=>'/printing/index.php?mainmenu=home&leftmenu=admintools',
                                 'langs'=>'printing',            // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
                                 'position'=>300,
-                                'enabled'=>'$conf->printing->enabled && $leftmenu==\'admintools\'',
+                                'enabled'=>'$conf->printing->enabled && ($leftmenu==\'admintools\' || $leftmenu==\'admintools_info\')',
                                 'perms'=>'$user->rights->printing->read',    // Use 'perms'=>'1' if you want your menu with no permission rules
                                 'target'=>'',
                                 'user'=>0);                     // 0=Menu for internal users, 1=external users, 2=both

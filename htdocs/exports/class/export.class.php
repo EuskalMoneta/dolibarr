@@ -288,15 +288,15 @@ class Export
 				{
 					// mode plage
 					$ValueArray = explode("+", $ValueField);
-					$szFilterQuery ="(".$this->conditionDate($NameField,$ValueArray[0],">=");
-					$szFilterQuery.=" AND ".$this->conditionDate($NameField,$ValueArray[1],"<=").")";
+					$szFilterQuery ="(".$this->conditionDate($NameField,trim($ValueArray[0]),">=");
+					$szFilterQuery.=" AND ".$this->conditionDate($NameField,trim($ValueArray[1]),"<=").")";
 				}
 				else
 				{
 					if (is_numeric(substr($ValueField,0,1)))
-						$szFilterQuery=$this->conditionDate($NameField,$ValueField,"=");
+						$szFilterQuery=$this->conditionDate($NameField,trim($ValueField),"=");
 					else
-						$szFilterQuery=$this->conditionDate($NameField,substr($ValueField,1),substr($ValueField,0,1));
+						$szFilterQuery=$this->conditionDate($NameField,trim(substr($ValueField,1)),substr($ValueField,0,1));
 				}
 				break;
 			case 'Duree':
@@ -329,7 +329,7 @@ class Export
 					$szFilterQuery=" ".$NameField."='".$ValueField."'";
 				break;
 			default:
-			    dol_syslog("Error we try to forge an sql export request with a condition on a field with type '".$InfoFieldList[0]."' (defined into module descriptor) but this type is unknown/not supported. It looks like a bug into module descriptor.", LOG_ERROR);
+			    dol_syslog("Error we try to forge an sql export request with a condition on a field with type '".$InfoFieldList[0]."' (defined into module descriptor) but this type is unknown/not supported. It looks like a bug into module descriptor.", LOG_ERR);
 		}
 
 		return $szFilterQuery;
@@ -529,7 +529,7 @@ class Export
 			return -1;
 		}
 
-		// Creation de la classe d'export du model ExportXXX
+		// Creation of class to export using model ExportXXX
 		$dir = DOL_DOCUMENT_ROOT . "/core/modules/export/";
 		$file = "export_".$model.".modules.php";
 		$classname = "Export".$model;

@@ -50,6 +50,9 @@ class Categorie extends CommonObject
 	const TYPE_CONTACT = 4;    // TODO Replace this value with 'contact'
 	const TYPE_USER = 4;       // categorie contact and user are same !   TODO Replace this value with 'user'
     const TYPE_ACCOUNT = 5;    // for bank account TODO Replace this value with 'account'
+    const TYPE_PROJECT = 6;
+    public $picto = 'category';
+
 
 	/**
 	 * @var array ID mapping from type string
@@ -64,6 +67,7 @@ class Categorie extends CommonObject
 		'contact'  => 4,
 		'user'     => 4,
         'account'  => 5,
+        'project'  => 6,
 	);
 	/**
 	 * @var array Foreign keys mapping from type string
@@ -78,6 +82,7 @@ class Categorie extends CommonObject
 		'contact'  => 'socpeople',
 		'user'  => 'user',
         'account' => 'account',
+        'project' => 'project',
 	);
 	/**
 	 * @var array Category tables mapping from type string
@@ -92,6 +97,7 @@ class Categorie extends CommonObject
 		'contact'  => 'contact',
 		'user'  => 'user',
         'account' => 'account',
+        'project' => 'project',
 	);
 	/**
 	 * @var array Object class mapping from type string
@@ -106,6 +112,7 @@ class Categorie extends CommonObject
 		'contact'  => 'Contact',
 		'user'     => 'User',
         'account' => 'Account',
+        'project' => 'Project',
 	);
 	/**
 	 * @var array Object table mapping from type string
@@ -120,22 +127,23 @@ class Categorie extends CommonObject
 		'contact'  => 'socpeople',
 		'user'     => 'user',
         'account' => 'bank_account',
+        'project' => 'projet',
 	);
 
 	public $element='category';
 	public $table_element='categories';
 
-	var $fk_parent;
-	var $label;
-	var $description;
+	public $fk_parent;
+	public $label;
+	public $description;
 	/**
 	 * @var string     Color
 	 */
-	var $color;
+	public $color;
 	/**
 	 * @var ???
 	 */
-	var $socid;
+	public $socid;
 	/**
 	 * @var int Category type
 	 *
@@ -146,11 +154,12 @@ class Categorie extends CommonObject
 	 * @see Categorie::TYPE_CONTACT
 	 * @see Categorie::TYPE_USER
 	 * @see Categorie::TYPE_ACCOUNT
+	 * @see Categorie::TYPE_PROJECT
 	 */
-	var $type;
+	public $type;
 
-	var $cats=array();			// Categories table in memory
-	var $motherof=array();
+	public $cats = array();			// Categories table in memory
+	public $motherof = array();
 
 	/**
 	 *	Constructor
@@ -198,6 +207,7 @@ class Categorie extends CommonObject
 				$res = $this->db->fetch_array($resql);
 
 				$this->id			= $res['rowid'];
+				//$this->ref			= $res['rowid'];
 				$this->fk_parent	= $res['fk_parent'];
 				$this->label		= $res['label'];
 				$this->description	= $res['description'];
@@ -451,7 +461,7 @@ class Categorie extends CommonObject
 
 		$this->db->begin();
 
-		/* FIX #1317 : Check for child cat and move up 1 level*/
+		/* FIX #1317 : Check for child category and move up 1 level*/
 		if (! $error)
 		{
 			$sql = "UPDATE ".MAIN_DB_PREFIX."categorie";
@@ -514,6 +524,39 @@ class Categorie extends CommonObject
 				$error++;
 			}
 		}
+		if (! $error)
+		{
+			$sql  = "DELETE FROM ".MAIN_DB_PREFIX."categorie_contact";
+			$sql .= " WHERE fk_categorie = ".$this->id;
+			if (!$this->db->query($sql))
+			{
+				$this->error=$this->db->lasterror();
+				$error++;
+			}
+		}
+		if (! $error)
+		{
+			$sql  = "DELETE FROM ".MAIN_DB_PREFIX."categorie_account";
+			$sql .= " WHERE fk_categorie = ".$this->id;
+			if (!$this->db->query($sql))
+			{
+				$this->error=$this->db->lasterror();
+				dol_syslog("Error sql=".$sql." ".$this->error, LOG_ERR);
+				$error++;
+			}
+		}
+		if (! $error)
+		{
+		    $sql  = "DELETE FROM ".MAIN_DB_PREFIX."bank_class";
+		    $sql .= " WHERE fk_categ = ".$this->id;
+		    if (!$this->db->query($sql))
+		    {
+		        $this->error=$this->db->lasterror();
+		        dol_syslog("Error sql=".$sql." ".$this->error, LOG_ERR);
+		        $error++;
+		    }
+		}
+
 		if (! $error)
 		{
 			$sql  = "DELETE FROM ".MAIN_DB_PREFIX."categorie_lang";
@@ -1031,11 +1074,11 @@ class Categorie extends CommonObject
 
 
 	/**
-	 * 	Returns all categories 
+	 * 	Returns all categories
 	 *
 	 *	@param	int			$type		Type of category
 	 *	@param	boolean		$parent		Just parent categories if true
-	 *	@return	array					Table of Object Category  
+	 *	@return	array					Table of Object Category
 	 */
 	function get_all_categories($type=null, $parent=false)
 	{
@@ -1120,11 +1163,11 @@ class Categorie extends CommonObject
 				 */
 				if($obj[0] > 0 && $obj[0] != $this->id)
 				{
-					dol_syslog(get_class($this)."::already_exists category with name=".$this->label." exist rowid=".$obj[0]." current_id=".$this->id, LOG_DEBUG);
+					dol_syslog(get_class($this)."::already_exists category with name=".$this->label." and parent ".$this->fk_parent." exists: rowid=".$obj[0]." current_id=".$this->id, LOG_DEBUG);
 					return 1;
 				}
 			}
-			dol_syslog(get_class($this)."::already_exists no category with same name=".$this->label." rowid=".$obj[0]." current_id=".$this->id, LOG_DEBUG);
+			dol_syslog(get_class($this)."::already_exists no category with same name=".$this->label." and same parent ".$this->fk_parent.": rowid=".$obj[0]." current_id=".$this->id, LOG_DEBUG);
 			return 0;
 		}
 		else
@@ -1185,7 +1228,7 @@ class Categorie extends CommonObject
     			        }
     			    }
 			    }
-			    
+
 				if ($url == '')
 				{
 			        $link = '<a href="'.DOL_URL_ROOT.'/categories/viewcat.php?id='.$cat->id.'&type='.$cat->type.'" class="'.$forced_color .'">';
@@ -1198,7 +1241,7 @@ class Categorie extends CommonObject
 				}
 			}
 			$newcategwithpath = preg_replace('/toreplace/', $forced_color, implode($sep, $w));
-			
+
 			$ways[] = $newcategwithpath;
 		}
 
@@ -1241,8 +1284,8 @@ class Categorie extends CommonObject
 	}
 
 	/**
-	 * 	Returns in a table all possible paths to get to the category 
-	 * 	starting with the major categories represented by Tables of categories  
+	 * 	Returns in a table all possible paths to get to the category
+	 * 	starting with the major categories represented by Tables of categories
 	 *
 	 *	@return	array
 	 */
@@ -1417,7 +1460,7 @@ class Categorie extends CommonObject
     		$b = hexdec($hex[4].$hex[5]);
     		$bright = (max($r, $g, $b) + min($r, $g, $b)) / 510.0;    // HSL algorithm
     		if ($bright >= 0.5) $forced_color='categtextblack';        // Higher than 60%
-		}		
+		}
 
         $link = '<a href="'.DOL_URL_ROOT.'/categories/viewcat.php?id='.$this->id.'&type='.$this->type.'" title="'.dol_escape_htmltag($label, 1).'" class="classfortooltip '.$forced_color .'">';
 		$linkend='</a>';
@@ -1683,6 +1726,18 @@ class Categorie extends CommonObject
 	        return -1;
 	    }
 	}
+
+	/**
+	 *	Return label of contact status
+	 *
+	 *	@param      int			$mode       0=libelle long, 1=libelle court, 2=Picto + Libelle court, 3=Picto, 4=Picto + Libelle long, 5=Libelle court + Picto
+	 * 	@return 	string					Label of contact status
+	 */
+	function getLibStatut($mode)
+	{
+	    return '';
+	}
+
 
     /**
      *  Initialise an instance with random values.

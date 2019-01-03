@@ -26,6 +26,7 @@ include_once DOL_DOCUMENT_ROOT.'/contact/class/contact.class.php';
 class mailing_advthirdparties extends MailingTargets
 {
 	var $name='ThirdPartyAdvancedTargeting';
+	// This label is used if no translation is found for key XXX neither MailingModuleDescXXX where XXX=name is found
 	var $desc="Third parties";
 	var $require_admin=0;
 
@@ -200,7 +201,7 @@ class mailing_advthirdparties extends MailingTargets
 	 *	For example if this selector is used to extract 500 different
 	 *	emails from a text file, this function must return 500.
 	 *
-	 *  @param      string     $sql       Sql request to use
+	 *  @param	string	$sql 		Not use here
 	 *	@return	    int			          Nb of recipients
 	 */
 	function getNbOfRecipients($sql='')

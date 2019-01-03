@@ -78,7 +78,7 @@ if ($action == 'add_payment')
         setEventMessages($langs->trans("ErrorFieldRequired",$langs->transnoentities("AccountToDebit")), null, 'errors');
         $error++;
     }
-    
+
 	if (! $error)
 	{
 		$paymentid = 0;
@@ -176,7 +176,7 @@ if (GETPOST("action") == 'create')
 	print '<input type="hidden" name="id" value="'.$chid.'">';
 	print '<input type="hidden" name="chid" value="'.$chid.'">';
 	print '<input type="hidden" name="action" value="add_payment">';
-	
+
     dol_fiche_head();
 
 	print '<table cellspacing="0" class="border" width="100%" cellpadding="2">';
@@ -199,7 +199,7 @@ if (GETPOST("action") == 'create')
 		$db->free();
 	}
 	print '<tr><td>'.$langs->trans("AlreadyPaid").'</td><td colspan="2">'.price($sumpaid,0,$outputlangs,1,-1,-1,$conf->currency).'</td></tr>';
-	print '<tr><td valign="top">'.$langs->trans("RemainderToPay").'</td><td colspan="2">'.price($total-$sumpaid,0,$outputlangs,1,-1,-1,$conf->currency).'</td></tr>';
+	print '<tr><td class="tdtop">'.$langs->trans("RemainderToPay").'</td><td colspan="2">'.price($total-$sumpaid,0,$outputlangs,1,-1,-1,$conf->currency).'</td></tr>';
 
 	print '<tr class="liste_titre">';
 	print "<td colspan=\"3\">".$langs->trans("Payment").'</td>';
@@ -225,7 +225,7 @@ if (GETPOST("action") == 'create')
     	$form->select_comptes(isset($_POST["accountid"])?$_POST["accountid"]:$expensereport->accountid, "accountid", 0, '',1);  // Show open bank account list
     	print '</td></tr>';
 	}
-	
+
 	// Number
 	print '<tr><td>'.$langs->trans('Numero');
 	print ' <em>('.$langs->trans("ChequeOrTransferNumber").')</em>';
@@ -233,7 +233,7 @@ if (GETPOST("action") == 'create')
 	print '<td colspan="2"><input name="num_payment" type="text" value="'.GETPOST('num_payment').'"></td></tr>'."\n";
 
 	print '<tr>';
-	print '<td valign="top">'.$langs->trans("Comments").'</td>';
+	print '<td class="tdtop">'.$langs->trans("Comments").'</td>';
 	print '<td valign="top" colspan="2"><textarea name="note" wrap="soft" cols="60" rows="'.ROWS_3.'"></textarea></td>';
 	print '</tr>';
 

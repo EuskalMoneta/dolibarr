@@ -3,8 +3,8 @@
  * Copyright (C) 2007-2011	Laurent Destailleur		<eldy@users.sourceforge.net>
  * Copyright (C) 2009-2012	Regis Houssin			<regis.houssin@capnetworks.com>
  * Copyright (C) 2011-2016	Juanjo Menent			<jmenent@2byte.es>
- * Copyright (C) 2013 		Philippe Grand      	<philippe.grand@atoo-net.com>
- * Copyright (C) 2015	    Alexandre Spangaro      <aspangaro.dolibarr@gmail.com>
+ * Copyright (C) 2013 		Philippe Grand			<philippe.grand@atoo-net.com>
+ * Copyright (C) 2015-2016	Alexandre Spangaro		<aspangaro.dolibarr@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,9 +21,9 @@
  */
 
 /**
- *	\file       htdocs/compta/paiement/cheque/card.php
- *	\ingroup    bank, invoice
- *	\brief      Page for cheque deposits
+ *	\file		htdocs/compta/paiement/cheque/card.php
+ *	\ingroup	bank, invoice
+ *	\brief		Page for cheque deposits
  */
 
 require '../../../main.inc.php';
@@ -57,7 +57,7 @@ if ($page < 0) { $page = 0 ; }
 $limit = GETPOST('limit')?GETPOST('limit','int'):$conf->liste_limit;
 $offset = $limit * $page ;
 
-$dir=$conf->banque->dir_output.'/bordereau/';
+$dir=$conf->bank->dir_output.'/checkdeposits/';
 $filterdate=dol_mktime(0, 0, 0, GETPOST('fdmonth'), GETPOST('fdday'), GETPOST('fdyear'));
 $filteraccountid=GETPOST('accountid');
 
@@ -95,7 +95,7 @@ if ($action == 'setrefext' && $user->rights->banque->cheque)
     {
         $ref_ext = GETPOST('ref_ext');
 
-        $result=$object->setValueFrom('ref_ext', $ref_ext);
+        $result=$object->setValueFrom('ref_ext', $ref_ext, '', null, 'text', '', $user, 'CHECKDEPOSIT_MODIFY');
         if ($result < 0)
         {
             setEventMessages($object->error, $object->errors, 'errors');
@@ -298,7 +298,9 @@ if (GETPOST('removefilter'))
     $filteraccountid=0;
 }
 
-llxHeader();
+$title=$langs->trans("Cheques") . " - " . $langs->trans("Card");
+$helpurl="";
+llxHeader("",$title,$helpurl);
 
 $form = new Form($db);
 $formfile = new FormFile($db);
@@ -386,7 +388,7 @@ if ($action == 'new')
 	print '<table class="border" width="100%">';
 	//print '<tr><td width="30%">'.$langs->trans('Date').'</td><td width="70%">'.dol_print_date($now,'day').'</td></tr>';
 	// Filter
-	print '<tr><td width="200">'.$langs->trans("DateChequeReceived").'</td><td>';
+	print '<tr><td class="titlefieldcreate">'.$langs->trans("DateChequeReceived").'</td><td>';
 	print $form->select_date($filterdate,'fd',0,0,1,'',1,1,1);
 	print '</td></tr>';
     print '<tr><td>'.$langs->trans("BankAccount").'</td><td>';
@@ -469,7 +471,10 @@ if ($action == 'new')
 		print '<input type="hidden" name="action" value="create">';
 		print '<input type="hidden" name="accountid" value="'.$bid.'">';
 
-		print '<table class="noborder" width="100%">';
+		$moreforfilter='';
+        print '<div class="div-table-responsive-no-min">';
+        print '<table class="tagtable liste'.($moreforfilter?" listwithfilterbefore":"").'">'."\n";
+		
 		print '<tr class="liste_titre">';
 		print '<td style="min-width: 120px">'.$langs->trans("DateChequeReceived").' ';
 		print "</td>\n";
@@ -502,7 +507,7 @@ if ($action == 'new')
 			print '<td>'.$value["emetteur"]."</td>\n";
 			print '<td>'.$value["banque"]."</td>\n";
 			print '<td align="right">'.price($value["amount"], 0, $langs, 1, -1, -1, $conf->currency).'</td>';
-			
+
 			// Link to payment
 			print '<td align="center">';
 			$paymentstatic->id=$value["paymentid"];
@@ -528,7 +533,7 @@ if ($action == 'new')
 				print '&nbsp;';
 			}
 			print '</td>';
-			
+
 			print '<td align="center">';
 			print '<input id="'.$value["id"].'" class="flat checkforremise_'.$bid.'" checked type="checkbox" name="toRemise[]" value="'.$value["id"].'">';
 			print '</td>' ;
@@ -537,7 +542,8 @@ if ($action == 'new')
 			$i++;
 		}
 		print "</table>";
-
+        print '</div>';
+        
 		print '<div class="tabsAction">';
 		if ($user->rights->banque->cheque)
 		{
@@ -554,41 +560,24 @@ if ($action == 'new')
 }
 else
 {
-	$linkback='<a href="'.$_SERVER["PHP_SELF"].'?leftmenu=customers_bills_checks&action=new">'.$langs->trans("BackToList").'</a>';
 	$paymentstatic=new Paiement($db);
 	$accountlinestatic=new AccountLine($db);
 	$accountstatic=new Account($db);
+	$accountstatic->fetch($object->account_id);
 
-	$accountstatic->id=$object->account_id;
-	$accountstatic->label=$object->account_label;
+	$linkback='<a href="'.DOL_URL_ROOT.'/compta/paiement/cheque/list.php">'.$langs->trans("BackToList").'</a>';
+	
+	$morehtmlref='';
+	dol_banner_tab($object, 'ref', $linkback, 1, 'ref', 'ref', $morehtmlref);
+	
+	
+	print '<div class="fichecenter">';
+	print '<div class="underbanner clearboth"></div>';
 
+	
 	print '<table class="border" width="100%">';
-	print '<tr><td width=20%>';
 
-	print '<table class="nobordernopadding" width="100%"><tr><td>';
-	print $langs->trans('Ref');
-	print '</td>';
-	if ($action != 'editref') print '<td align="right"><a href="'.$_SERVER["PHP_SELF"].'?action=editref&amp;id='.$object->id.'">'.img_edit($langs->trans('SetRef'),1).'</a></td>';
-	print '</tr></table>';
-	print '</td><td colspan="2">';
-	if ($action == 'editref')
-	{
-		print '<form name="setdate" action="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'" method="post">';
-		print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
-		print '<input type="hidden" name="action" value="setref">';
-		print '<input type="text" name="ref" value="'.$object->ref.'">';
-		print '<input type="submit" class="button" value="'.$langs->trans('Modify').'">';
-		print '</form>';
-	}
-	else
-	{
-	    print $form->showrefnav($object,'ref',$linkback, 1, 'ref');
-	}
-
-	print '</td>';
-	print '</tr>';
-
-	print '<tr><td>';
+	print '<tr><td class="titlefield">';
 
     print '<table class="nobordernopadding" width="100%"><tr><td>';
     print $langs->trans('Date');
@@ -654,13 +643,15 @@ else
 	print price($object->amount);
 	print '</td></tr>';
 
-	print '<tr><td>'.$langs->trans('Status').'</td><td colspan="2">';
+	/*print '<tr><td>'.$langs->trans('Status').'</td><td colspan="2">';
 	print $object->getLibStatut(4);
-	print '</td></tr>';
+	print '</td></tr>';*/
 
 	print '</table><br>';
 
+	print '</div>';
 
+	
 	// List of cheques
 	$sql = "SELECT b.rowid, b.amount, b.num_chq, b.emetteur,";
 	$sql.= " b.dateo as date, b.datec as datec, b.banque,";
@@ -678,6 +669,7 @@ else
 	{
 		$num = $db->num_rows($resql);
 
+	    print '<div class="div-table-responsive">';
 		print '<table class="noborder" width="100%">';
 
 		$param="&amp;id=".$object->id;
@@ -754,13 +746,14 @@ else
 			$i++;
 		}
 		print "</table>";
+		print "</div>";
 	}
 	else
 	{
 		dol_print_error($db);
 	}
 
-    dol_fiche_end();
+	dol_fiche_end();
 }
 
 
@@ -799,7 +792,7 @@ if ($action != 'new')
 		$filedir=$dir.get_exdir($object->ref,0,1,0,$object,'cheque') . dol_sanitizeFileName($object->ref);
 		$urlsource=$_SERVER["PHP_SELF"]."?id=".$object->id;
 
-		$formfile->show_documents('remisecheque', $filename, $filedir, $urlsource, 1, 1);
+		print $formfile->showdocuments('remisecheque', $filename, $filedir, $urlsource, 1, 1);
 
 		print '<br>';
 	}

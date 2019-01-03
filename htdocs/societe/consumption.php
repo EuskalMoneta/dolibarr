@@ -1,9 +1,9 @@
 <?php
 /* Copyright (C) 2012-2013 Philippe Berthet     <berthet@systune.be>
- * Copyright (C) 2004-2015 Laurent Destailleur  <eldy@users.sourceforge.net>
+ * Copyright (C) 2004-2016 Laurent Destailleur  <eldy@users.sourceforge.net>
  * Copyright (C) 2013-2015 Juanjo Menent		<jmenent@2byte.es>
  * Copyright (C) 2015      Marcos García        <marcosgdf@gmail.com>
- * Copyright (C) 2015	   Ferran Marcet		<fmarcet@2byte.es>
+ * Copyright (C) 2015-2017 Ferran Marcet		<fmarcet@2byte.es>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ $month	= GETPOST('month','int');
 $year	= GETPOST('year','int');
 
 // Clean up on purge search criteria ?
-if (GETPOST("button_removefilter_x") || GETPOST("button_removefilter")) // Both test are required to be compatible with all browsers
+if (GETPOST("button_removefilter_x") || GETPOST("button_removefilter.x") || GETPOST("button_removefilter")) // Both test are required to be compatible with all browsers
 {
     $sref='';
     $sprod_fulldescr='';
@@ -245,7 +245,7 @@ if ($type_element == 'supplier_invoice')
 { 	// Supplier : Show products from invoices.
 	require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.facture.class.php';
 	$documentstatic=new FactureFournisseur($db);
-	$sql_select = 'SELECT f.rowid as doc_id, f.ref as doc_number, \'1\' as doc_type, f.datef as dateprint, f.fk_statut as status, ';
+	$sql_select = 'SELECT f.rowid as doc_id, f.ref as doc_number, \'1\' as doc_type, f.datef as dateprint, f.fk_statut as status, f.paye as paid, ';
 	$tables_from = MAIN_DB_PREFIX."facture_fourn as f,".MAIN_DB_PREFIX."facture_fourn_det as d";
 	$where = " WHERE f.fk_soc = s.rowid AND s.rowid = ".$socid;
 	$where.= " AND d.fk_facture_fourn = f.rowid";
@@ -282,12 +282,12 @@ if ($type_element == 'contract')
 	$thirdTypeSelect='customer';
 }
 
-if (!empty($sql_select)) 
+if (!empty($sql_select))
 {
 	$sql = $sql_select;
 	$sql.= ' d.description as description,';
-	if ($type_element != 'fichinter' && $type_element != 'contract') $sql.= ' d.label, d.fk_product as product_id, d.fk_product as fk_product, d.info_bits, d.date_start, d.date_end, d.qty, d.qty as prod_qty,';
-	if ($type_element == 'contract') $sql.= ' d.label, d.fk_product as product_id, d.fk_product as fk_product, d.info_bits, d.date_ouverture as date_start, d.date_cloture as date_end, d.qty, d.qty as prod_qty,';
+	if ($type_element != 'fichinter' && $type_element != 'contract') $sql.= ' d.label, d.fk_product as product_id, d.fk_product as fk_product, d.info_bits, d.date_start, d.date_end, d.qty, d.qty as prod_qty, d.total_ht as total_ht, ';
+	if ($type_element == 'contract') $sql.= ' d.label, d.fk_product as product_id, d.fk_product as fk_product, d.info_bits, d.date_ouverture as date_start, d.date_cloture as date_end, d.qty, d.qty as prod_qty, d.total_ht as total_ht, ';
 	if ($type_element != 'fichinter') $sql.= ' p.ref as ref, p.rowid as prod_id, p.rowid as fk_product, p.fk_product_type as prod_type, p.fk_product_type as fk_product_type, p.entity as pentity,';
 	$sql.= " s.rowid as socid ";
 	if ($type_element != 'fichinter') $sql.= ", p.ref as prod_ref, p.label as product_label";
@@ -316,10 +316,10 @@ if (!empty($sql_select))
 	    $sql.=")";
 	}
 	$sql.= $db->order($sortfield,$sortorder);
-	
+
 	$resql=$db->query($sql);
 	$totalnboflines = $db->num_rows($resql);
-	
+
 	$sql.= $db->plimit($limit + 1, $offset);
 	//print $sql;
 }
@@ -337,6 +337,7 @@ $typeElementString = $form->selectarray("type_element", $elementTypeArray, GETPO
 $button = '<input type="submit" class="button" name="button_third" value="'.dol_escape_htmltag($langs->trans("Search")).'" title="'.dol_escape_htmltag($langs->trans("Search")).'">';
 $param="&amp;sref=".$sref."&amp;month=".$month."&amp;year=".$year."&amp;sprod_fulldescr=".$sprod_fulldescr."&amp;socid=".$socid."&amp;type_element=".$type_element;
 
+$total_qty=0;
 
 if ($sql_select)
 {
@@ -365,6 +366,8 @@ if ($sql_select)
     print_liste_field_titre($langs->trans('Status'),$_SERVER['PHP_SELF'],'fk_statut','',$param,'align="center"',$sortfield,$sortorder);
     print_liste_field_titre($langs->trans('Product'),$_SERVER['PHP_SELF'],'','',$param,'align="left"',$sortfield,$sortorder);
     print_liste_field_titre($langs->trans('Quantity'),$_SERVER['PHP_SELF'],'prod_qty','',$param,'align="right"',$sortfield,$sortorder);
+    print_liste_field_titre($langs->trans('TotalHT'),$_SERVER['PHP_SELF'],'total_ht','',$param,'align="right"',$sortfield,$sortorder);
+    print_liste_field_titre($langs->trans('UnitPrice'),$_SERVER['PHP_SELF'],'','',$param,'align="right"',$sortfield,$sortorder);
     print "</tr>\n";
     // Filters
     print '<tr class="liste_titre">';
@@ -379,6 +382,10 @@ if ($sql_select)
     print '</td>';
     print '<td class="liste_titre" align="left">';
     print '<input class="flat" type="text" name="sprod_fulldescr" size="15" value="'.dol_escape_htmltag($sprod_fulldescr).'">';
+    print '</td>';
+    print '<td class="liste_titre" align="center">';
+    print '</td>';
+    print '<td class="liste_titre" align="center">';
     print '</td>';
     print '<td class="liste_titre" align="right">';
     $searchpitco=$form->showFilterAndCheckAddButtons(0);
@@ -557,11 +564,23 @@ if ($sql_select)
 		//print '<td align="left">'.$prodreftxt.'</td>';
 
 		print '<td align="right">'.$objp->prod_qty.'</td>';
+		$total_qty+=$objp->prod_qty;
+
+		print '<td align="right">'.price($objp->total_ht).'</td>';
+		$total_ht+=$objp->total_ht;
+
+		print '<td align="right">'.price($objp->total_ht/(empty($objp->prod_qty)?1:$objp->prod_qty)).'</td>';
 
 		print "</tr>\n";
 		$i++;
 	}
 
+	print '<tr class="liste_total">';
+	print '<td>' . $langs->trans('Total') . '</td>';
+	print '<td colspan="3"></td>';
+	print '<td align="right">' . $total_qty . '</td>';
+	print '<td align="right">' . price($total_ht) . '</td>';
+	print '<td align="right">' . price($total_ht/(empty($total_qty)?1:$total_qty)) . '</td>';
 	print "</table>";
 
 	if ($num > $limit) {

@@ -6,6 +6,7 @@
  * Copyright (C) 2012      	Christophe Battarel <christophe.battarel@altairis.fr>
  * Copyright (C) 2012       Cedric Salvador     <csalvador@gpcsolutions.fr>
  * Copyright (C) 2015       Marcos García       <marcosgdf@gmail.com>
+ * Copyright (C) 2017       Ferran Marcet       <fmarcet@2byte.es>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -121,7 +122,7 @@ class pdf_einstein extends ModelePDFCommandes
 		}
 		$this->posxdiscount=162;
 		$this->postotalht=174;
-		if (! empty($conf->global->MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT)) $this->posxtva=$this->posxup;
+		if (! empty($conf->global->MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT) || ! empty($conf->global->MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT_COLUMN)) $this->posxtva=$this->posxup;
 		$this->posxpicture=$this->posxtva - (empty($conf->global->MAIN_DOCUMENTS_WITH_PICTURE_WIDTH)?20:$conf->global->MAIN_DOCUMENTS_WITH_PICTURE_WIDTH);	// width of images
 		if ($this->page_largeur < 210) // To work with US executive format
 		{
@@ -150,7 +151,7 @@ class pdf_einstein extends ModelePDFCommandes
      *  @param		int			$hidedetails		Do not show line details
      *  @param		int			$hidedesc			Do not show desc
      *  @param		int			$hideref			Do not show ref
-     *  @return     int             			1=OK, 0=KO
+     *  @return     int             			    1=OK, 0=KO
 	 */
 	function write_file($object,$outputlangs,$srctemplatepath='',$hidedetails=0,$hidedesc=0,$hideref=0)
 	{
@@ -215,11 +216,11 @@ class pdf_einstein extends ModelePDFCommandes
 				$pdf=pdf_getInstance($this->format);
 				$default_font_size = pdf_getPDFFontSize($outputlangs);	// Must be after pdf_getInstance
 				$pdf->SetAutoPageBreak(1,0);
-				
+
 				$heightforinfotot = 40;	// Height reserved to output the info and total part
 		        $heightforfreetext= (isset($conf->global->MAIN_PDF_FREETEXT_HEIGHT)?$conf->global->MAIN_PDF_FREETEXT_HEIGHT:5);	// Height reserved to output the free text on last page
 	            $heightforfooter = $this->marge_basse + 8;	// Height reserved to output the footer (value include bottom margin)
-                
+
                 if (class_exists('TCPDF'))
                 {
                     $pdf->setPrintHeader(false);
@@ -292,16 +293,16 @@ class pdf_einstein extends ModelePDFCommandes
 						$pdf->writeHTMLCell(190, 3, $this->posxdesc-1, $tab_top-1, dol_htmlentitiesbr($desc_incoterms), 0, 1);
 						$nexY = $pdf->GetY();
 						$height_incoterms=$nexY-$tab_top;
-	
+
 						// Rect prend une longueur en 3eme param
 						$pdf->SetDrawColor(192,192,192);
 						$pdf->Rect($this->marge_gauche, $tab_top-1, $this->page_largeur-$this->marge_gauche-$this->marge_droite, $height_incoterms+1);
-	
+
 						$tab_top = $nexY+6;
 						$height_incoterms += 4;
 					}
 				}
-				
+
 				// Affiche notes
 				$notetoshow=empty($object->note_public)?'':$object->note_public;
 				if (! empty($conf->global->MAIN_ADD_SALE_REP_SIGNATURE_IN_NOTE))
@@ -453,7 +454,7 @@ class pdf_einstein extends ModelePDFCommandes
 					// Collecte des totaux par valeur de tva dans $this->tva["taux"]=total_tva
 					if ($conf->multicurrency->enabled && $object->multicurrency_tx != 1) $tvaligne=$object->lines[$i]->multicurrency_total_tva;
 					else $tvaligne=$object->lines[$i]->total_tva;
-					
+
 					$localtax1ligne=$object->lines[$i]->total_localtax1;
 					$localtax2ligne=$object->lines[$i]->total_localtax2;
 					$localtax1_rate=$object->lines[$i]->localtax1_tx;
@@ -483,7 +484,7 @@ class pdf_einstein extends ModelePDFCommandes
 						$this->localtax2[$localtax2_type][$localtax2_rate]+=$localtax2ligne;
 
 					if (($object->lines[$i]->info_bits & 0x01) == 0x01) $vatrate.='*';
-					if (! isset($this->tva[$vatrate])) 				$this->tva[$vatrate]= 0;
+					if (! isset($this->tva[$vatrate])) 				$this->tva[$vatrate]=0;
 					$this->tva[$vatrate] += $tvaligne;
 
 					// Add line
@@ -560,7 +561,7 @@ class pdf_einstein extends ModelePDFCommandes
 					$posy=$this->_tableau_versements($pdf, $object, $posy, $outputlangs);
 				}
 				*/
-				
+
 				// Pied de page
 				$this->_pagefoot($pdf,$object,$outputlangs);
 				if (method_exists($pdf,'AliasNbPages')) $pdf->AliasNbPages();
@@ -591,8 +592,6 @@ class pdf_einstein extends ModelePDFCommandes
 			$this->error=$langs->trans("ErrorConstantNotDefined","COMMANDE_OUTPUTDIR");
 			return 0;
 		}
-		$this->error=$langs->trans("ErrorUnknown");
-		return 0;   // Erreur par defaut
 	}
 
 	/**
@@ -839,6 +838,8 @@ class pdf_einstein extends ModelePDFCommandes
 		// Show VAT by rates and total
 		$pdf->SetFillColor(248,248,248);
 
+		$total_ttc = ($conf->multicurrency->enabled && $object->multicurrency_tx != 1) ? $object->multicurrency_total_ttc : $object->total_ttc;
+
 		$this->atleastoneratenotnull=0;
 		if (empty($conf->global->MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT))
 		{
@@ -1012,7 +1013,6 @@ class pdf_einstein extends ModelePDFCommandes
 				$pdf->SetFillColor(224,224,224);
 				$pdf->MultiCell($col2x-$col1x, $tab2_hl, $outputlangs->transnoentities("TotalTTC"), $useborder, 'L', 1);
 
-				$total_ttc = ($conf->multicurrency->enabled && $object->multiccurency_tx != 1) ? $object->multicurrency_total_ttc : $object->total_ttc;
 				$pdf->SetXY($col2x, $tab2_top + $tab2_hl * $index);
 				$pdf->MultiCell($largcol2, $tab2_hl, price($total_ttc, 0, $outputlangs), $useborder, 'R', 1);
 			}
@@ -1025,7 +1025,7 @@ class pdf_einstein extends ModelePDFCommandes
 		//$creditnoteamount=$object->getSumCreditNotesUsed();
 		//$depositsamount=$object->getSumDepositsUsed();
 		//print "x".$creditnoteamount."-".$depositsamount;exit;
-		$resteapayer = price2num($object->total_ttc - $deja_regle - $creditnoteamount - $depositsamount, 'MT');
+		$resteapayer = price2num($total_ttc - $deja_regle - $creditnoteamount - $depositsamount, 'MT');
 		if (! empty($object->paye)) $resteapayer=0;
 
 		if ($deja_regle > 0)
@@ -1256,6 +1256,21 @@ class pdf_einstein extends ModelePDFCommandes
 		$pdf->SetXY($posx,$posy);
 		$pdf->SetTextColor(0,0,60);
 		$pdf->MultiCell(100, 3, $outputlangs->transnoentities("OrderDate")." : " . dol_print_date($object->date,"%d %b %Y",false,$outputlangs,true), '', 'R');
+
+		// Get contact
+		if (!empty($conf->global->DOC_SHOW_FIRST_SALES_REP))
+		{
+		    $arrayidcontact=$object->getIdContact('internal','SALESREPFOLL');
+		    if (count($arrayidcontact) > 0)
+		    {
+                $usertmp=new User($this->db);
+		        $usertmp->fetch($arrayidcontact[0]);
+                $posy+=4;
+                $pdf->SetXY($posx,$posy);
+		        $pdf->SetTextColor(0,0,60);
+		        $pdf->MultiCell(100, 3, $langs->trans("SalesRepresentative")." : ".$usertmp->getFullName($langs), '', 'R');
+		    }
+		}
 
 		$posy+=2;
 

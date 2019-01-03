@@ -60,10 +60,10 @@ class AccountingAccount extends CommonObject
 	/**
 	 * Load record in memory
 	 *
-	 * @param 	int 	$rowid 				Id
-	 * @param 	string 	$account_number 	Account number
-	 * @param 	int 	$limittocurrentchart 1=Do not load record if it is into another accounting system
-	 * @return 	int <0 if KO, >0 if OK
+	 * @param 	int 	$rowid 				   Id
+	 * @param 	string 	$account_number 	   Account number
+	 * @param 	int 	$limittocurrentchart   1=Do not load record if it is into another accounting system
+	 * @return 	int                            <0 if KO, Id of record if OK and found
 	 */
 	function fetch($rowid = null, $account_number = null, $limittocurrentchart = 0) {
 		global $conf;
@@ -150,12 +150,19 @@ class AccountingAccount extends CommonObject
 		if (isset($this->active))
 			$this->active = trim($this->active);
 			
-			// Check parameters
-			// Put here code to add control on parameters values
+		if (empty($this->pcg_type) || $this->pcg_type == '-1')
+		{
+		    $this->pcg_type = 'XXXXXX';
+		}
+		if (empty($this->pcg_subtype) || $this->pcg_subtype == '-1')
+		{
+		    $this->pcg_subtype = 'XXXXXX';
+		}
+		// Check parameters
+		// Put here code to add control on parameters values
 			
 		// Insert request
 		$sql = "INSERT INTO " . MAIN_DB_PREFIX . "accounting_account(";
-		
 		$sql .= "datec";
 		$sql .= ", entity";
 		$sql .= ", fk_pcg_version";
@@ -167,21 +174,18 @@ class AccountingAccount extends CommonObject
 		$sql .= ", fk_accounting_category";
 		$sql .= ", fk_user_author";
 		$sql .= ", active";
-		
 		$sql .= ") VALUES (";
-		
 		$sql .= " '" . $this->db->idate($now) . "'";
 		$sql .= ", " . $conf->entity;
-		$sql .= ", " . (! isset($this->fk_pcg_version) ? 'NULL' : "'" . $this->db->escape($this->fk_pcg_version) . "'");
-		$sql .= ", " . (! isset($this->pcg_type) ? 'NULL' : "'" . $this->db->escape($this->pcg_type) . "'");
-		$sql .= ", " . (! isset($this->pcg_subtype) ? 'NULL' : "'" . $this->pcg_subtype . "'");
-		$sql .= ", " . (! isset($this->account_number) ? 'NULL' : "'" . $this->account_number . "'");
-		$sql .= ", " . (! isset($this->account_parent) ? 'NULL' : "'" . $this->db->escape($this->account_parent) . "'");
-		$sql .= ", " . (! isset($this->label) ? 'NULL' : "'" . $this->db->escape($this->label) . "'");
-		$sql .= ", " . (! isset($this->account_category) ? 'NULL' : "'" . $this->db->escape($this->account_category) . "'");
+		$sql .= ", " . (empty($this->fk_pcg_version) ? 'NULL' : "'" . $this->db->escape($this->fk_pcg_version) . "'");
+		$sql .= ", " . (empty($this->pcg_type) ? 'NULL' : "'" . $this->db->escape($this->pcg_type) . "'");
+		$sql .= ", " . (empty($this->pcg_subtype) ? 'NULL' : "'" . $this->pcg_subtype . "'");
+		$sql .= ", " . (empty($this->account_number) ? 'NULL' : "'" . $this->account_number . "'");
+		$sql .= ", " . (empty($this->account_parent) ? 'NULL' : "'" . $this->db->escape($this->account_parent) . "'");
+		$sql .= ", " . (empty($this->label) ? 'NULL' : "'" . $this->db->escape($this->label) . "'");
+		$sql .= ", " . (empty($this->account_category) ? 'NULL' : "'" . $this->db->escape($this->account_category) . "'");
 		$sql .= ", " . $user->id;
-		$sql .= ", " . (! isset($this->active) ? 'NULL' : "'" . $this->db->escape($this->active) . "'");
-		
+		$sql .= ", " . (! isset($this->active) ? 'NULL' : $this->db->escape($this->active));
 		$sql .= ")";
 		
 		$this->db->begin();
@@ -226,11 +230,22 @@ class AccountingAccount extends CommonObject
 	/**
 	 * Update record
 	 *
-	 * @param User $user Use making update
-	 * @return int <0 if KO, >0 if OK
+	 * @param  User $user      Use making update
+	 * @return int             <0 if KO, >0 if OK
 	 */
-	function update($user) {
-		$this->db->begin();
+	function update($user) 
+	{
+	    // Check parameters
+	    if (empty($this->pcg_type) || $this->pcg_type == '-1')
+	    {
+	        $this->pcg_type = 'XXXXXX';
+	    }
+	    if (empty($this->pcg_subtype) || $this->pcg_subtype == '-1')
+	    {
+	        $this->pcg_subtype = 'XXXXXX';
+	    }
+	     
+	    $this->db->begin();
 		
 		$sql = "UPDATE " . MAIN_DB_PREFIX . "accounting_account ";
 		$sql .= " SET fk_pcg_version = " . ($this->fk_pcg_version ? "'" . $this->db->escape($this->fk_pcg_version) . "'" : "null");
@@ -242,7 +257,6 @@ class AccountingAccount extends CommonObject
 		$sql .= " , fk_accounting_category = '" . $this->account_category . "'";
 		$sql .= " , fk_user_modif = " . $user->id;
 		$sql .= " , active = '" . $this->active . "'";
-		
 		$sql .= " WHERE rowid = " . $this->id;
 		
 		dol_syslog(get_class($this) . "::update sql=" . $sql, LOG_DEBUG);

@@ -144,10 +144,6 @@ function dol_loginfunction($langs,$conf,$mysoc)
 
 	$dol_url_root = DOL_URL_ROOT;
 
-	$php_self = $_SERVER['PHP_SELF'];
-	$php_self.= $_SERVER["QUERY_STRING"]?'?'.$_SERVER["QUERY_STRING"]:'';
-	if (! preg_match('/mainmenu=/',$php_self)) $php_self.=(preg_match('/\?/',$php_self)?'&':'?').'mainmenu=home';
-
 	// Title
 	$appli=constant('DOL_APPLICATION_TITLE');
 	$title=$appli.' '.DOL_VERSION;
@@ -293,7 +289,7 @@ function dol_loginfunction($langs,$conf,$mysoc)
 	$jquerytheme = 'smoothness';
 	if (! empty($conf->global->MAIN_USE_JQUERY_THEME)) $jquerytheme = $conf->global->MAIN_USE_JQUERY_THEME;
 
-	// Set dol_hide_topmenu, dol_hide_leftmenu, dol_optimize_smallscreen, dol_nomousehover
+	// Set dol_hide_topmenu, dol_hide_leftmenu, dol_optimize_smallscreen, dol_no_mouse_hover
 	$dol_hide_topmenu=GETPOST('dol_hide_topmenu','int');
 	$dol_hide_leftmenu=GETPOST('dol_hide_leftmenu','int');
 	$dol_optimize_smallscreen=GETPOST('dol_optimize_smallscreen','int');
@@ -422,7 +418,7 @@ function encodedecode_dbpassconf($level=0)
 			fflush($fp);
 			fclose($fp);
 			clearstatcache();
-			
+
 			// It's config file, so we set read permission for creator only.
 			// Should set permission to web user and groups for users used by batch
 			//@chmod($file, octdec('0600'));

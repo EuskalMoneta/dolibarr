@@ -20,10 +20,9 @@
  */
 
 /**
- * \file    stock/productlot.class.php
+ * \file    product/stock/class/productlot.class.php
  * \ingroup stock
- * \brief   This file is an example for a CRUD class file (Create/Read/Update/Delete)
- *          Put some comments here
+ * \brief   This is CRUD class file to manage table productlot (Create/Read/Update/Delete)
  */
 
 // Put here all includes required by your class file
@@ -32,10 +31,7 @@ require_once DOL_DOCUMENT_ROOT . '/core/class/commonobject.class.php';
 //require_once DOL_DOCUMENT_ROOT . '/product/class/product.class.php';
 
 /**
- * Class Productlot
- *
- * Put here description of your class
- * @see CommonObject
+ * Class with list of lots and properties
  */
 class Productlot extends CommonObject
 {
@@ -47,7 +43,12 @@ class Productlot extends CommonObject
 	 * @var string Name of table without prefix where object is stored
 	 */
 	public $table_element = 'product_lot';
-
+	
+	public $picto='barcode';
+	
+	public $isnolinkedbythird = 1;
+    public $ismultientitymanaged = 1;
+    
 	/**
 	 * @var ProductlotLine[] Lines
 	 */
@@ -123,7 +124,6 @@ class Productlot extends CommonObject
 
 		// Insert request
 		$sql = 'INSERT INTO ' . MAIN_DB_PREFIX . $this->table_element . '(';
-		
 		$sql.= 'entity,';
 		$sql.= 'fk_product,';
 		$sql.= 'batch,';
@@ -133,10 +133,7 @@ class Productlot extends CommonObject
 		$sql.= 'fk_user_creat,';
 		$sql.= 'fk_user_modif,';
 		$sql.= 'import_key';
-
-		
 		$sql .= ') VALUES (';
-		
 		$sql .= ' '.(! isset($this->entity)?'NULL':$this->entity).',';
 		$sql .= ' '.(! isset($this->fk_product)?'NULL':$this->fk_product).',';
 		$sql .= ' '.(! isset($this->batch)?'NULL':"'".$this->db->escape($this->batch)."'").',';
@@ -146,8 +143,6 @@ class Productlot extends CommonObject
 		$sql .= ' '.(! isset($this->fk_user_creat)?'NULL':$this->fk_user_creat).',';
 		$sql .= ' '.(! isset($this->fk_user_modif)?'NULL':$this->fk_user_modif).',';
 		$sql .= ' '.(! isset($this->import_key)?'NULL':$this->import_key);
-
-		
 		$sql .= ')';
 
 		$this->db->begin();
@@ -166,10 +161,10 @@ class Productlot extends CommonObject
 				// Uncomment this and change MYOBJECT to your own tag if you
 				// want this action to call a trigger.
 
-				//// Call triggers
-				//$result=$this->call_trigger('MYOBJECT_CREATE',$user);
-				//if ($result < 0) $error++;
-				//// End call triggers
+				// Call triggers
+				$result=$this->call_trigger('PRODUCTLOT_CREATE',$user);
+				if ($result < 0) $error++;
+				// End call triggers
 			}
 		}
 
@@ -194,13 +189,12 @@ class Productlot extends CommonObject
 	 *
 	 * @return int <0 if KO, 0 if not found, >0 if OK
 	 */
-	public function fetch($id = 0, $product_id = null, $batch = null)
+	public function fetch($id = 0, $product_id = 0, $batch = '')
 	{
 		dol_syslog(__METHOD__, LOG_DEBUG);
 
 		$sql = 'SELECT';
 		$sql .= ' t.rowid,';
-		
 		$sql .= " t.entity,";
 		$sql .= " t.fk_product,";
 		$sql .= " t.batch,";
@@ -211,11 +205,9 @@ class Productlot extends CommonObject
 		$sql .= " t.fk_user_creat,";
 		$sql .= " t.fk_user_modif,";
 		$sql .= " t.import_key";
-
-		
 		$sql .= ' FROM ' . MAIN_DB_PREFIX . $this->table_element . ' as t';
-		if ((null !== $product_id) && (null !== $batch)) {
-			$sql .= ' WHERE t.batch = ' . '\'' . $batch . '\' AND t.fk_product = ' . $product_id;
+		if ($product_id > 0 && $batch != '') {
+			$sql .= ' WHERE t.batch = ' . '\'' . $this->db->escape($batch) . '\' AND t.fk_product = ' . $product_id;
 		} else {
 			$sql .= ' WHERE t.rowid = ' . $id;
 		}
@@ -227,10 +219,13 @@ class Productlot extends CommonObject
 				$obj = $this->db->fetch_object($resql);
 
 				$this->id = $obj->rowid;
+				$this->ref = $obj->rowid;
+				//$this->ref = $obj->fk_product.'_'.$obj->batch;
+				
+				$this->batch = $obj->batch;
 				
 				$this->entity = $obj->entity;
 				$this->fk_product = $obj->fk_product;
-				$this->batch = $obj->batch;
 				$this->eatby = $this->db->jdate($obj->eatby);
 				$this->sellby = $this->db->jdate($obj->sellby);
 				$this->datec = $this->db->jdate($obj->datec);
@@ -239,7 +234,12 @@ class Productlot extends CommonObject
 				$this->fk_user_modif = $obj->fk_user_modif;
 				$this->import_key = $obj->import_key;
 
-				
+				// Retrieve all extrafields for invoice
+				// fetch optionals attributes and labels
+				require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
+				$extrafields=new ExtraFields($this->db);
+				$extralabels=$extrafields->fetch_name_optionals_label($this->table_element,true);
+				$this->fetch_optionals($this->id,$extralabels);				
 			}
 			$this->db->free($resql);
 
@@ -312,7 +312,8 @@ class Productlot extends CommonObject
 		if ($resql) {
 			$num = $this->db->num_rows($resql);
 
-			while ($obj = $this->db->fetch_object($resql)) {
+			while ($obj = $this->db->fetch_object($resql)) 
+			{
 				$line = new ProductlotLine();
 
 				$line->id = $obj->rowid;
@@ -327,8 +328,6 @@ class Productlot extends CommonObject
 				$line->fk_user_creat = $obj->fk_user_creat;
 				$line->fk_user_modif = $obj->fk_user_modif;
 				$line->import_key = $obj->import_key;
-
-				
 
 				$this->lines[$line->id] = $line;
 			}
@@ -378,14 +377,11 @@ class Productlot extends CommonObject
 			 $this->import_key = trim($this->import_key);
 		}
 
-		
-
 		// Check parameters
 		// Put here code to add a control on parameters values
 
 		// Update request
 		$sql = 'UPDATE ' . MAIN_DB_PREFIX . $this->table_element . ' SET';
-		
 		$sql .= ' entity = '.(isset($this->entity)?$this->entity:"null").',';
 		$sql .= ' fk_product = '.(isset($this->fk_product)?$this->fk_product:"null").',';
 		$sql .= ' batch = '.(isset($this->batch)?"'".$this->db->escape($this->batch)."'":"null").',';
@@ -396,8 +392,6 @@ class Productlot extends CommonObject
 		$sql .= ' fk_user_creat = '.(isset($this->fk_user_creat)?$this->fk_user_creat:"null").',';
 		$sql .= ' fk_user_modif = '.(isset($this->fk_user_modif)?$this->fk_user_modif:"null").',';
 		$sql .= ' import_key = '.(isset($this->import_key)?$this->import_key:"null");
-
-        
 		$sql .= ' WHERE rowid=' . $this->id;
 
 		$this->db->begin();
@@ -413,10 +407,10 @@ class Productlot extends CommonObject
 			// Uncomment this and change MYOBJECT to your own tag if you
 			// want this action calls a trigger.
 
-			//// Call triggers
-			//$result=$this->call_trigger('MYOBJECT_MODIFY',$user);
-			//if ($result < 0) { $error++; //Do also what you must do to rollback action if trigger fail}
-			//// End call triggers
+			// Call triggers
+			$result=$this->call_trigger('PRODUCTLOT_MODIFY',$user);
+			if ($result < 0) { $error++; }
+			// End call triggers
 		}
 
 		// Commit or rollback
@@ -530,7 +524,83 @@ class Productlot extends CommonObject
 		}
 	}
 	
+	
 	/**
+	 *	Return label of status of object
+	 *
+	 *	@param      int		$mode       0=long label, 1=short label, 2=Picto + short label, 3=Picto, 4=Picto + long label, 5=Short label + Picto
+	 *	@return     string      		Label of status
+	 */
+	function getLibStatut($mode=0)
+	{
+	    return $this->LibStatut(0,$mode);
+	}
+	
+	/**
+	 *	Return label of a given status
+	 *
+	 *	@param	int		$statut     Status
+	 *	@param  int		$mode       0=long label, 1=short label, 2=Picto + short label, 3=Picto, 4=Picto + long label, 5=Short label + Picto
+	 *	@return string      		Label of status
+	 */
+	function LibStatut($statut,$mode=0)
+	{
+	    global $langs;
+	
+	    //$langs->load('stocks');
+
+	    return '';
+	}
+	
+	
+	/**
+	 *  Return a link to the a lot card (with optionaly the picto)
+	 * 	Use this->id,this->lastname, this->firstname
+	 *
+	 *	@param	int		$withpicto			Include picto in link (0=No picto, 1=Include picto into link, 2=Only picto)
+	 *	@param	string	$option				On what the link point to
+     *  @param	integer	$notooltip			1=Disable tooltip
+     *  @param	int		$maxlen				Max length of visible user name
+     *  @param  string  $morecss            Add more css on link
+	 *	@return	string						String with URL
+	 */
+	function getNomUrl($withpicto=0, $option='', $notooltip=0, $maxlen=24, $morecss='')
+	{
+		global $langs, $conf, $db;
+        global $dolibarr_main_authentication, $dolibarr_main_demo;
+        global $menumanager;
+
+
+        $result = '';
+
+        $label = '<u>' . $langs->trans("Batch") . '</u>';
+        $label.= '<div width="100%">';
+        $label.= '<b>' . $langs->trans('Batch') . ':</b> ' . $this->batch;
+        if ($this->eatby)
+        {
+            $label.= '<br><b>' . $langs->trans('EatByDate') . ':</b> ' . dol_print_date($this->eatby, 'day');
+        }
+        if ($this->sellby)
+        {
+            $label.= '<br><b>' . $langs->trans('SellByDate') . ':</b> ' . dol_print_date($this->sellby, 'day');
+        }
+        
+        $link = '<a href="'.DOL_URL_ROOT.'/product/stock/productlot_card.php?id='.$this->id.'"';
+        $link.= ($notooltip?'':' title="'.dol_escape_htmltag($label, 1).'" class="classfortooltip'.($morecss?' '.$morecss:'').'"');
+        $link.= '>';
+		$linkend='</a>';
+
+        if ($withpicto)
+        {
+            $result.=($link.img_object(($notooltip?'':$label), 'barcode', ($notooltip?'':'class="classfortooltip"'), 0, 0, $notooltip?0:1).$linkend);
+            if ($withpicto != 2) $result.=' ';
+		}
+		$result.= $link . $this->batch . $linkend;
+		return $result;
+	}
+	
+	
+	/** 
 	 * Initialise object with example values
 	 * Id must be 0 if object instance is a specimen
 	 *
@@ -550,8 +620,6 @@ class Productlot extends CommonObject
 		$this->fk_user_creat = '';
 		$this->fk_user_modif = '';
 		$this->import_key = '';
-
-		
 	}
 
 }

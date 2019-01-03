@@ -327,7 +327,7 @@ if (($action=="create") || ($action=="edit"))
 
 	print '<tr><td class="fieldrequired titlefieldcreate">';
 	print $langs->trans('CronLabel')."</td>";
-	print "<td><input type=\"text\" size=\"20\" name=\"label\" value=\"".$object->label."\" /> ";
+	print "<td><input type=\"text\" size=\"30\" name=\"label\" value=\"".$object->label."\" /> ";
 	print "</td>";
 	print "<td>";
 	print "</td>";
@@ -397,7 +397,7 @@ if (($action=="create") || ($action=="edit"))
 
 	print '<tr><td>';
 	print $langs->trans('CronNote')."</td><td>";
-	$doleditor = new DolEditor('note', $object->note, '', 160, 'dolibarr_notes', 'In', true, false, 0, 4, 90);
+	$doleditor = new DolEditor('note', $object->note, '', 160, 'dolibarr_notes', 'In', true, false, 0, ROWS_4, '90%');
 	$doleditor->Create();
 	print "</td>";
 	print "<td>";
@@ -663,11 +663,13 @@ else
 	print $langs->trans('CronDtNextLaunch');
 	print ' ('.$langs->trans('CronFrom').')';
 	print "</td><td>";
-	print '<strong>';
-	if (!empty($object->datenextrun)) {print dol_print_date($object->datenextrun,'dayhoursec');} else {print $langs->trans('CronNone');}
+	//print '<strong>';
+	if (! $object->status) print $langs->trans("Disabled");
+	elseif (!empty($object->datenextrun)) { print img_picto('','object_calendarday').' '.dol_print_date($object->datenextrun,'dayhoursec');} 
+	else {print $langs->trans('CronNone');}
+	//print '</strong>';
 	if ($object->maxnbrun && $object->nbrun >= $object->maxrun) print img_warning($langs->trans("Finished"));
 	if ($object->datenextrun && $object->datenextrun < $now) print img_warning($langs->trans("Late"));
-	print '</strong>';
 	print "</td></tr>";
 	
 	print '</table>';

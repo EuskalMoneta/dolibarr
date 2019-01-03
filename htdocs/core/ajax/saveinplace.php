@@ -35,13 +35,26 @@ $element		= GETPOST('element','alpha',2);
 $table_element	= GETPOST('table_element','alpha',2);
 $fk_element		= GETPOST('fk_element','alpha',2);
 
+/* Example:
+field:editval_ref_customer (8 first chars will removed to know name of property)
+element:contrat
+table_element:contrat
+fk_element:4
+type:string
+value:aaa
+loadmethod:
+savemethod:
+savemethodname:
+*/
+
+
 /*
  * View
  */
 
 top_httphead();
 
-//print '<!-- Ajax page called with url '.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].' -->'."\n";
+//print '<!-- Ajax page called with url '.dol_escape_htmltag($_SERVER["PHP_SELF"]).'?'.dol_escape_htmltag($_SERVER["QUERY_STRING"]).' -->'."\n";
 //print_r($_POST);
 
 // Load original field value
@@ -81,7 +94,7 @@ if (! empty($field) && ! empty($element) && ! empty($table_element) && ! empty($
 	}
 	else $newelement = $element;
 
-	if (! empty($user->rights->$newelement->creer) || ! empty($user->rights->$newelement->write)
+	if (! empty($user->rights->$newelement->creer) || ! empty($user->rights->$newelement->create) || ! empty($user->rights->$newelement->write)
 	|| (isset($subelement) && (! empty($user->rights->$newelement->$subelement->creer) || ! empty($user->rights->$newelement->$subelement->write)))
 	|| ($element == 'payment' && $user->rights->facture->paiement)
 	|| ($element == 'payment_supplier' && $user->rights->fournisseur->facture->creer))

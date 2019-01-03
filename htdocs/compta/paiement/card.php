@@ -199,10 +199,11 @@ if ($action == 'valide')
 
 }
 
-print '<table class="border" width="100%">';
 
 $linkback = '<a href="' . DOL_URL_ROOT . '/compta/paiement/list.php">' . $langs->trans("BackToList") . '</a>';
 
+
+print '<table class="border centpercent">'."\n";
 
 // Ref
 print '<tr><td class="titlefield">'.$langs->trans('Ref').'</td><td colspan="3">';
@@ -235,7 +236,7 @@ $disable_delete = 0;
 // Bank account
 if (! empty($conf->banque->enabled))
 {
-    if ($object->bank_account)
+    if ($object->fk_account > 0)
     {
     	$bankline=new AccountLine($db);
     	$bankline->fetch($object->bank_line);
@@ -256,9 +257,8 @@ if (! empty($conf->banque->enabled))
     	print '<td>'.$langs->trans('BankAccount').'</td>';
 		print '<td colspan="3">';
 		$accountstatic=new Account($db);
-        $accountstatic->id=$bankline->fk_account;
-	    $accountstatic->label=$bankline->bank_account_ref.' - '.$bankline->bank_account_label;
-        print $accountstatic->getNomUrl(0);
+		$accountstatic->fetch($bankline->fk_account);
+        print $accountstatic->getNomUrl(1);
     	print '</td>';
     	print '</tr>';
 
@@ -280,6 +280,8 @@ if (! empty($conf->banque->enabled))
 
 print '</table>';
 
+dol_fiche_end();
+
 
 /*
  * List of invoices
@@ -298,7 +300,14 @@ if ($resql)
 
 	$i = 0;
 	$total = 0;
-	print '<br><table class="noborder" width="100%">';
+	
+	$moreforfilter='';
+	
+	print '<br>';
+	
+	print '<div class="div-table-responsive">';
+	print '<table class="noborder" width="100%">';
+	
 	print '<tr class="liste_titre">';
 	print '<td>'.$langs->trans('Bill').'</td>';
 	print '<td>'.$langs->trans('Company').'</td>';
@@ -363,6 +372,8 @@ if ($resql)
 	$var=!$var;
 
 	print "</table>\n";
+	print '</div>';
+	
 	$db->free($resql);
 }
 else
@@ -370,7 +381,6 @@ else
 	dol_print_error($db);
 }
 
-print '</div>';
 
 
 /*

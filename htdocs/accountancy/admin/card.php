@@ -19,14 +19,14 @@
 
 /**
  * \file 		htdocs/accountancy/admin/card.php
- * \ingroup 	Advanced accountancy
+ * \ingroup     Advanced accountancy
  * \brief 		Card of accounting account
  */
-require '../../main.inc.php';
 
-// Class
+require '../../main.inc.php';
 require_once DOL_DOCUMENT_ROOT . '/core/lib/accounting.lib.php';
 require_once DOL_DOCUMENT_ROOT . '/accountancy/class/accountingaccount.class.php';
+require_once DOL_DOCUMENT_ROOT . '/accountancy/class/accountancysystem.class.php';
 require_once DOL_DOCUMENT_ROOT . '/accountancy/class/html.formventilation.class.php';
 require_once DOL_DOCUMENT_ROOT . '/core/class/html.formaccounting.class.php';
 
@@ -38,6 +38,7 @@ $langs->load("accountancy");
 
 $mesg = '';
 $action = GETPOST('action');
+$backtopage = GETPOST('backtopage');
 $id = GETPOST('id', 'int');
 $rowid = GETPOST('rowid', 'int');
 $cancel = GETPOST('cancel');
@@ -47,7 +48,18 @@ $cancel = GETPOST('cancel');
 
 $object = new AccountingAccount($db);
 
-// Action
+
+/*
+ * Action
+ */
+
+if (GETPOST('cancel'))
+{
+	$urltogo=$backtopage?$backtopage:dol_buildpath('/accountancy/admin/account.php',1);
+	header("Location: ".$urltogo);
+	exit;
+}
+		
 if ($action == 'add' && $user->rights->accounting->chartofaccount)
 {
 	if (! $cancel) {
@@ -85,18 +97,30 @@ if ($action == 'add' && $user->rights->accounting->chartofaccount)
 		$object->active = 1;
 		
 		$res = $object->create($user);
-		
 		if ($res == - 3) {
 			$error = 1;
 			$action = "create";
+			setEventMessages($object->error, $object->errors, 'errors');
 		}
-		if ($res == - 4) {
+		elseif ($res == - 4) {
 			$error = 2;
 			$action = "create";
+			setEventMessages($object->error, $object->errors, 'errors');
+		}
+		elseif ($res < 0)
+		{
+		    $error++;
+		    setEventMessages($object->error, $object->errors, 'errors');
+		    $action = "create";
+		}
+		if (! $error)
+		{
+		    setEventMessages("RecordCreatedSuccessfully",null,'mesgs');
+		    $urltogo=$backtopage?$backtopage:dol_buildpath('/accountancy/admin/account.php',1);
+		    header("Location: ".$urltogo);
+		    exit;
 		}
 	}
-	header("Location: account.php");
-	exit;
 } else if ($action == 'edit' && $user->rights->accounting->chartofaccount) {
 	if (! $cancel) {
 		$result = $object->fetch($id);
@@ -136,13 +160,15 @@ if ($action == 'add' && $user->rights->accounting->chartofaccount)
 		$result = $object->update($user);
 		
 		if ($result > 0) {
-			header("Location: " . $_SERVER["PHP_SELF"] . "?id=" . $id);
+		    $urltogo=$backtopage?$backtopage:($_SERVER["PHP_SELF"]."?id=".$id);
+		    header("Location: " . $urltogo);
 			exit();
 		} else {
 			$mesg = $object->error;
 		}
 	} else {
-		header("Location: " . $_SERVER["PHP_SELF"] . "?id=" . $id);
+	    $urltogo=$backtopage?$backtopage:($_SERVER["PHP_SELF"]."?id=".$id);
+	    header("Location: " . $urltogo);
 		exit();
 	}
 } else if ($action == 'delete' && $user->rights->accounting->chartofaccount) {
@@ -173,9 +199,12 @@ $form = new Form($db);
 $htmlacc = new FormVentilation($db);
 $formaccounting = new FormAccounting($db);
 
+$accountsystem = new AccountancySystem($db);
+$accountsystem->fetch($conf->global->CHARTOFACCOUNTS);
+
 // Create mode
 if ($action == 'create') {
-	print load_fiche_titre($langs->trans('NewAccount'));
+	print load_fiche_titre($langs->trans('NewAccountingAccount'));
 	
 	print '<form name="add" action="' . $_SERVER["PHP_SELF"] . '" method="POST">' . "\n";
 	print '<input type="hidden" name="token" value="' . $_SESSION['newtoken'] . '">';
@@ -185,36 +214,45 @@ if ($action == 'create') {
 	
 	print '<table class="border" width="100%">';
 
+	// Chart of account
+	print '<tr><td class="titlefieldcreate"><span class="fieldrequired">' . $langs->trans("Chartofaccounts") . '</span></td>';
+	print '<td>';
+	print $accountsystem->ref;
+	print '</td></tr>';
+	
+	
 	// Account number
 	print '<tr><td class="titlefieldcreate"><span class="fieldrequired">' . $langs->trans("AccountNumber") . '</span></td>';
-	print '<td><input name="account_number" size="30" value="' . $object->account_number . '"</td></tr>';
+	print '<td><input name="account_number" size="30" value="' . $object->account_number . '"></td></tr>';
 
 	// Label
 	print '<tr><td><span class="fieldrequired">' . $langs->trans("Label") . '</span></td>';
-	print '<td><input name="label" size="70" value="' . $object->label . '"</td></tr>';
+	print '<td><input name="label" size="70" value="' . $object->label . '"></td></tr>';
 
 	// Account parent
 	print '<tr><td>' . $langs->trans("Accountparent") . '</td>';
 	print '<td>';
-	print $htmlacc->select_account($object->account_parent, 'account_parent', 1);
+	print $htmlacc->select_account($object->account_parent, 'account_parent', 1, null, 0, 0, 'minwidth200');
 	print '</td></tr>';
 
 	// Category
 	print '<tr><td>' . $langs->trans("AccountingCategory") . '</td>';
 	print '<td>';
-	$formaccounting->select_accounting_category($object->account_category, 'account_category', 1);
+	$formaccounting->select_accounting_category($object->account_category, 'account_category', 1, 0, 1);
 	print '</td></tr>';
 
 	// Chart of accounts type
 	print '<tr><td>' . $langs->trans("Pcgtype") . '</td>';
 	print '<td>';
-	print $htmlacc->select_pcgtype($object->pcg_type, 'pcg_type');
+	print '<input type="text" name="pcg_type" value="'.dol_escape_htmltag(isset($_POST['pcg_type'])?GETPOST('pcg_type','alpha'):$object->pcg_type).'">';
+	//print $htmlacc->select_pcgtype($object->pcg_type, 'pcg_type', 1);
 	print '</td></tr>';
 
 	// Chart of acounts subtype
 	print '<tr><td>' . $langs->trans("Pcgsubtype") . '</td>';
 	print '<td>';
-	print $htmlacc->select_pcgsubtype($object->pcg_subtype, 'pcg_subtype');
+	print '<input type="text" name="pcg_subtype" value="'.dol_escape_htmltag(isset($_POST['pcg_subtype'])?GETPOST('pcg_subtype','alpha'):$object->pcg_subtype).'">';
+	//print $htmlacc->select_pcgsubtype($object->pcg_subtype, 'pcg_subtype', 1);
 	print '</td></tr>';
 	
 	print '</table>';
@@ -245,7 +283,8 @@ if ($action == 'create') {
 			print '<input type="hidden" name="token" value="' . $_SESSION['newtoken'] . '">';
 			print '<input type="hidden" name="action" value="edit">';
 			print '<input type="hidden" name="id" value="' . $id . '">';
-			
+			print '<input type="hidden" name="backtopage" value="' . $backtopage . '">';
+				
 			print '<table class="border" width="100%">';
 			
 			// Account number
@@ -271,13 +310,15 @@ if ($action == 'create') {
 			// Chart of accounts type
 			print '<tr><td>' . $langs->trans("Pcgtype") . '</td>';
 			print '<td>';
-			print $htmlacc->select_pcgtype($object->pcg_type, 'pcg_type');
+			//print $htmlacc->select_pcgtype($object->pcg_type, 'pcg_type', 1);
+			print '<input type="text" name="pcg_type" value="'.dol_escape_htmltag(isset($_POST['pcg_type'])?GETPOST('pcg_type','alpha'):$object->pcg_type).'">';
 			print '</td></tr>';
 
 			// Chart of accounts subtype
 			print '<tr><td>' . $langs->trans("Pcgsubtype") . '</td>';
 			print '<td>';
-			print $htmlacc->select_pcgsubtype($object->pcg_subtype, 'pcg_subtype');
+			print '<input type="text" name="pcg_subtype" value="'.dol_escape_htmltag(isset($_POST['pcg_subtype'])?GETPOST('pcg_subtype','alpha'):$object->pcg_subtype).'">';
+			//print $htmlacc->select_pcgsubtype($object->pcg_subtype, 'pcg_subtype', 1);
 			print '</td></tr>';
 			
 			print '</table>';

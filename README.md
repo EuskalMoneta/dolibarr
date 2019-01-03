@@ -36,7 +36,7 @@ If you have low technical skills and you're looking to install Dolibarr ERP/CRM 
 
 ### Advanced setup
 
-You can use a Web server and a supported database (MySQL recommended) to install the standard version.
+You can use a Web server and a supported database (MariaDb, MySql or Postgresql) to install the standard version.
 
 - Uncompress the downloaded archive
 - Copy directory "dolibarr" and all its files inside your web server root, or copy directory anywhere and set up your web server to use "dolibarr/htdocs" as root for a new web server virtual host (second choice need to be server administrator)
@@ -60,10 +60,10 @@ You can use a Web server and a supported database (MySQL recommended) to install
 ## UPGRADING
 
 - Overwrite all old files from 'dolibarr' directory with files provided into the new version's package.
-- If you're upgrading from version x.y.z to x.y.w (only third number differs), there is no need to run any migration process.
-- If you're upgrading from a beta version or from any version x.y.z to any other where x or y number differs, you must call the Dolibarr "install/" page in your browser (this should be done automatically at first dolibarr access) and follow the upgrade process.
+- At first next access, Dolibarr will redirect your to the "install/" page to make the upgrade process.
+  If a file install.lock exists to lock any run of upgrade process, the application will ask you to remove the file manually (you should find the install.lock file into the directory used to store generated and uploaded documents, in most cases, it is the directory called "documents").
 
-*Note: migration process can safely be done multiple times.*
+*Note: migration process can safely be done multiple times by calling the page /install/index.php*
 
 ## WHAT'S NEW
 
@@ -80,17 +80,18 @@ See the [ChangeLog](https://github.com/Dolibarr/dolibarr/blob/develop/ChangeLog)
 - Invoices and payment management
 - Standing orders management (European SEPA)
 - Bank accounts management
-- Shared calendar
-- Opportunities and/or project management (following project benefit including invoices, expense reports, time spent, ...)
+- Shared calendar/agenda (with ical and vcal export for third party tools integration)
+- Opportunities and/or project management
 - Projects management
 - Contracts management
 - Stock management
 - Shipping management
 - Interventions management
-- Agenda with ical and vcal export for third party tools integration
+- Employee's leave requests management
+- Expense reports
+- Timesheets
 - Electronic Document Management (EDM)
 - Foundations members management
-- Employee's holidays management
 - Mass emailing
 - Surveys
 - Point of Sale
@@ -119,7 +120,7 @@ See the [ChangeLog](https://github.com/Dolibarr/dolibarr/blob/develop/ChangeLog)
 - Can manage several currencies by adding external module multi-currency.
 - Very user friendly and easy to use
 - Highly customizable: enable only the modules you need, add user personalized fields, choose your skin, several menu managers (can be used by internal users as a back-office with a particular menu, or by external users as a front-office with another one)
-- Works with PHP 5.3+ and MySQL 4.1+ or PostgreSQL 8.1. (See requirements on the [Wiki](http://wiki.dolibarr.org/index.php/Prerequisite))
+- Works with PHP 5.3+ and MariaDB 5.0.3+, MySQL 5.0.3+ or PostgreSQL 8.1.4+ (See requirements on the [Wiki](http://wiki.dolibarr.org/index.php/Prerequisite))
 - Compatible with all Cloud solutions that match MySQL, PHP or PostgreSQL prerequisites.
 - An easy to understand, maintain and code interfaces with your own information system (PHP with no heavy framework; trigger and hook architecture)
 - Support for country specific features:
@@ -147,7 +148,7 @@ These are features that Dolibarr does **not** yet fully support:
 
 ## DOCUMENTATION
 
-Administrator, user, developer and translator's documentations are available along with other community resources on the [Wiki](http://wiki.dolibarr.org).
+Administrator, user, developer and translator's documentations are available along with other community resources on the [Wiki](https://wiki.dolibarr.org).
 
 ## CONTRIBUTING
 

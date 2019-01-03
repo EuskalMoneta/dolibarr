@@ -18,7 +18,7 @@
 use Luracast\Restler\RestException;
 
 require_once DOL_DOCUMENT_ROOT.'/adherents/class/adherent.class.php';
-require_once DOL_DOCUMENT_ROOT.'/adherents/class/cotisation.class.php';
+require_once DOL_DOCUMENT_ROOT.'/adherents/class/subscription.class.php';
 
 /**
  * API class for members
@@ -79,20 +79,17 @@ class Members extends DolibarrApi
      *
      * Get a list of members
      *
-     * @param string    $typeid     ID of the type of member
-     * @param string    $login      To filter the members by login
-     * @param string    $name       To filter the members by name (firstname, lastname or company name matching the filter)
-     * @param string    $email      To filter the members by email
-     * @param string    $token      To filter the members by token
      * @param string    $sortfield  Sort field
      * @param string    $sortorder  Sort order
      * @param int       $limit      Limit for list
      * @param int       $page       Page number
-     * @return array Array of member objects
+     * @param string    $typeid     ID of the type of member
+     * @param string    $sqlfilters Other criteria to filter answers separated by a comma. Syntax example "(t.ref:like:'SO-%') and (t.date_creation:<:'20160101')"
+     * @return array                Array of member objects
      *
      * @throws RestException
      */
-    function index($typeid = '', $login = '', $name = '', $email = '', $token = '', $sortfield = "a.rowid", $sortorder = 'ASC', $limit = 0, $page = 0) {
+    function index($sortfield = "t.rowid", $sortorder = 'ASC', $limit = 0, $page = 0, $typeid = '', $sqlfilters = '') {
         global $db, $conf;
 
         $obj_ret = array();
@@ -101,36 +98,24 @@ class Members extends DolibarrApi
             throw new RestException(401);
         }
 
-        $sql = "SELECT a.rowid";
-        $sql.= " FROM ".MAIN_DB_PREFIX."adherent as a";
-        if (!empty($token)) {
-            $sql .= " JOIN ".MAIN_DB_PREFIX."adherent_extrafields as e ON a.rowid = e.fk_object";
-        }
-        $sql.= ' WHERE a.entity IN ('.getEntity('adherent', 1).')';
+        $sql = "SELECT t.rowid";
+        $sql.= " FROM ".MAIN_DB_PREFIX."adherent as t";
+        $sql.= ' WHERE t.entity IN ('.getEntity('adherent', 1).')';
         if (!empty($typeid))
         {
-            $sql.= ' AND a.fk_adherent_type='.$typeid;
+            $sql.= ' AND t.fk_adherent_type='.$typeid;
         }
-        if (!empty($login)) {
-            $sql .= " AND a.login LIKE '%".$login."%'";
-        }
-        if (!empty($name)) {
-            $sql .= " AND (a.firstname LIKE '%".$name."%' OR a.lastname LIKE '%".$name."%' OR a.societe LIKE '%".$name."%')";
-        }
-        if (!empty($email)) {
-            $sql .= " AND a.email LIKE '%".$email."%'";
-        }
-        if (!empty($token)) {
-            $sql .= " AND e.token = '".$token."'";
-        }
-
-        $nbtotalofrecords = 0;
-        if (empty($conf->global->MAIN_DISABLE_FULL_SCANLIST))
+        // Add sql filters
+        if ($sqlfilters) 
         {
-            $result = $db->query($sql);
-            $nbtotalofrecords = $db->num_rows($result);
+            if (! DolibarrApi::_checkFilters($sqlfilters))
+            {
+                throw new RestException(503, 'Error when validating parameter sqlfilters '.$sqlfilters);
+            }
+	        $regexstring='\(([^:\'\(\)]+:[^:\'\(\)]+:[^:\(\)]+)\)';
+            $sql.=" AND (".preg_replace_callback('/'.$regexstring.'/', 'DolibarrApi::_forge_criteria_callback', $sqlfilters).")";
         }
-
+        
         $sql.= $db->order($sortfield, $sortorder);
         if ($limit)    {
             if ($page < 0)
@@ -147,7 +132,7 @@ class Members extends DolibarrApi
         {
             $i=0;
             $num = $db->num_rows($result);
-            while ($i < $num)
+            while ($i < min($limit, $num))
             {
                 $obj = $db->fetch_object($result);
                 $member = new Adherent($this->db);
@@ -158,7 +143,7 @@ class Members extends DolibarrApi
             }
         }
         else {
-            throw new RestException(503, 'Error when retrieve member list : '.$member->error);
+            throw new RestException(503, 'Error when retrieve member list : '.$db->lasterror());
         }
         if( ! count($obj_ret)) {
             throw new RestException(404, 'No member found');
@@ -185,8 +170,8 @@ class Members extends DolibarrApi
         foreach($request_data as $field => $value) {
             $member->$field = $value;
         }
-        if($member->create(DolibarrApiAccess::$user) < 0) {
-            throw new RestException(503, 'Error when create member : '.$member->error);
+        if ($member->create(DolibarrApiAccess::$user) < 0) {
+            throw new RestException(500, 'Error creating member', array_merge(array($member->error), $member->errors));
         }
         return $member->id;
     }
@@ -198,7 +183,7 @@ class Members extends DolibarrApi
      * @param array $request_data   Datas
      * @return int
      */
-    function patch($id, $request_data = null)
+    function put($id, $request_data = null)
     {
         if(! DolibarrApiAccess::$user->rights->adherent->creer) {
             throw new RestException(401);
@@ -210,11 +195,12 @@ class Members extends DolibarrApi
             throw new RestException(404, 'member not found');
         }
 
-        if( ! DolibarrApi::_checkAccessToResource('adherent',$member->id)) {
+        if( ! DolibarrApi::_checkAccessToResource('member',$member->id)) {
             throw new RestException(401, 'Access not allowed for login '.DolibarrApiAccess::$user->login);
         }
 
         foreach($request_data as $field => $value) {
+            if ($field == 'id') continue;
             // Process the status separately because it must be updated using
             // the validate() and resiliate() methods of the class Adherent.
             if ($field == 'statut') {
@@ -259,7 +245,7 @@ class Members extends DolibarrApi
             throw new RestException(404, 'member not found');
         }
 
-        if( ! DolibarrApi::_checkAccessToResource('adherent',$member->id)) {
+        if( ! DolibarrApi::_checkAccessToResource('member',$member->id)) {
             throw new RestException(401, 'Access not allowed for login '.DolibarrApiAccess::$user->login);
         }
 
@@ -282,7 +268,7 @@ class Members extends DolibarrApi
     /**
      * Validate fields before creating an object
      *
-     * @param array $data   Data to validate
+     * @param array|null    $data   Data to validate
      * @return array
      *
      * @throws RestException
@@ -303,9 +289,6 @@ class Members extends DolibarrApi
      *
      * @param   object  $object    Object to clean
      * @return    array    Array of cleaned object properties
-     *
-     * @todo use an array for properties to clean
-     *
      */
     function _cleanObjectDatas($object) {
 
@@ -374,45 +357,7 @@ class Members extends DolibarrApi
             throw new RestException(404, 'member not found');
         }
 
-        return $member->cotisation($start_date, $amount, 0, '', $label, '', '', '', $end_date);
-    }
-
-    /**
-     * Create an user from member
-     *
-     * @param   int   $id   Id of member
-     * @param   array   $request_data   Request data
-     * @return  int     ID of user
-     *
-     * @url	POST {id}/createUser
-     */
-    function createUser($id, $request_data = NULL) {
-        if (! DolibarrApiAccess::$user->rights->adherent->lire) {
-            throw new RestException(401);
-        }
-
-        $member = new Adherent($this->db);
-        $result = $member->fetch($id);
-        if ( ! $result ) {
-            throw new RestException(404, 'member not found');
-        }
-
-        if ( ! DolibarrApi::_checkAccessToResource('adherent',$member->id)) {
-            throw new RestException(401, 'Access not allowed for login '.DolibarrApiAccess::$user->login);
-        }
-
-        // Check mandatory fields
-        if (!isset($request_data["login"]))
-            throw new RestException(400, "login field missing");
-        $login = $request_data["login"];
-
-        $user = new User($this->db);
-        $result = $user->create_from_member($member, $login);
-        if ($result <= 0) {
-            throw new RestException(500, "User not created");
-        }
-
-        return $result;
+        return $member->subscription($start_date, $amount, 0, '', $label, '', '', '', $end_date);
     }
 
 }

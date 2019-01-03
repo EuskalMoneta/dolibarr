@@ -1,11 +1,11 @@
 <?php
-/* Copyright (C) 2004-2005	Rodolphe Quiedeville	<rodolphe@quiedeville.org>
- * Copyright (C) 2004-2015	Laurent Destailleur		<eldy@users.sourceforge.net>
- * Copyright (C) 2005		Marc Barilley / Ocebo	<marc@ocebo.com>
- * Copyright (C) 2005-2012	Regis Houssin			<regis.houssin@capnetworks.com>
- * Copyright (C) 2013-2014	Juanjo Menent			<jmenent@2byte.es>
+/* Copyright (C) 2004-2005  Rodolphe Quiedeville    <rodolphe@quiedeville.org>
+ * Copyright (C) 2004-2015  Laurent Destailleur     <eldy@users.sourceforge.net>
+ * Copyright (C) 2005       Marc Barilley / Ocebo   <marc@ocebo.com>
+ * Copyright (C) 2005-2012  Regis Houssin           <regis.houssin@capnetworks.com>
+ * Copyright (C) 2013-2014  Juanjo Menent           <jmenent@2byte.es>
  * Copyright (C) 2014       Marcos García           <marcosgdf@gmail.com>
- * Copyright (C) 2015       Raphaël Doursenaud      <rdoursenaud@gpcsolutions.fr>
+ * Copyright (C) 2015-2016  Raphaël Doursenaud      <rdoursenaud@gpcsolutions.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,8 @@
  */
 include_once 'inc.php';
 
+global $langs;
+
 $err = 0;
 $allowinstall = 0;
 $allowupgrade = false;
@@ -42,7 +44,10 @@ $langs->load("install");
 $useforcedwizard=false;
 $forcedfile="./install.forced.php";
 if ($conffile == "/etc/dolibarr/conf.php") $forcedfile="/etc/dolibarr/install.forced.php";
-if (@file_exists($forcedfile)) { $useforcedwizard=true; include_once $forcedfile; }
+if (@file_exists($forcedfile)) {
+	$useforcedwizard = true;
+	include_once $forcedfile;
+}
 
 dolibarr_install_syslog("--- check: Dolibarr install/upgrade process started");
 
@@ -117,7 +122,7 @@ else
 }
 
 
-// Check if GD supported
+// Check if GD supported (we need GD for image conversion)
 if (! function_exists("imagecreate"))
 {
 	$langs->load("errors");
@@ -127,6 +132,19 @@ if (! function_exists("imagecreate"))
 else
 {
 	print '<img src="../theme/eldy/img/tick.png" alt="Ok"> '.$langs->trans("PHPSupportGD")."<br>\n";
+}
+
+
+// Check if Curl supported
+if (! function_exists("curl_init"))
+{
+    $langs->load("errors");
+    print '<img src="../theme/eldy/img/warning.png" alt="Error"> '.$langs->trans("ErrorPHPDoesNotSupportCurl")."<br>\n";
+    // $checksok=0;		// If image ko, just warning. So check must still be 1 (otherwise no way to install)
+}
+else
+{
+    print '<img src="../theme/eldy/img/tick.png" alt="Ok"> '.$langs->trans("PHPSupportCurl")."<br>\n";
 }
 
 
@@ -288,7 +306,19 @@ else
 				}
 				else
 				{
-                    require_once $dolibarr_main_document_root.'/core/lib/admin.lib.php';
+            require_once $dolibarr_main_document_root.'/core/lib/admin.lib.php';
+
+            // If password is encoded, we decode it
+            if (preg_match('/crypted:/i',$dolibarr_main_db_pass) || ! empty($dolibarr_main_db_encrypted_pass))
+            {
+                require_once $dolibarr_main_document_root.'/core/lib/security.lib.php';
+                if (preg_match('/crypted:/i',$dolibarr_main_db_pass))
+                {
+                    $dolibarr_main_db_encrypted_pass = preg_replace('/crypted:/i', '', $dolibarr_main_db_pass);	// We need to set this as it is used to know the password was initially crypted
+                    $dolibarr_main_db_pass = dol_decode($dolibarr_main_db_encrypted_pass);
+                }
+                else $dolibarr_main_db_pass = dol_decode($dolibarr_main_db_encrypted_pass);
+            }
 
     				// $conf is already instancied inside inc.php
     				$conf->db->type = $dolibarr_main_db_type;
@@ -297,12 +327,12 @@ else
     				$conf->db->name = $dolibarr_main_db_name;
     				$conf->db->user = $dolibarr_main_db_user;
     				$conf->db->pass = $dolibarr_main_db_pass;
-                    $db=getDoliDBInstance($conf->db->type,$conf->db->host,$conf->db->user,$conf->db->pass,$conf->db->name,$conf->db->port);
+            $db=getDoliDBInstance($conf->db->type,$conf->db->host,$conf->db->user,$conf->db->pass,$conf->db->name,$conf->db->port);
     				if ($db->connected && $db->database_selected)
     				{
     					$ok=true;
     				}
-                }
+        }
 			}
 		}
 
@@ -392,7 +422,8 @@ else
 								array('from'=>'3.6.0', 'to'=>'3.7.0'),
 								array('from'=>'3.7.0', 'to'=>'3.8.0'),
 		                        array('from'=>'3.8.0', 'to'=>'3.9.0'),
-		                        array('from'=>'3.9.0', 'to'=>'4.0.0')
+		                        array('from'=>'3.9.0', 'to'=>'4.0.0'),
+		                        array('from'=>'4.0.0', 'to'=>'5.0.0')
 		);
 
 		$count=0;

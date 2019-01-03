@@ -36,6 +36,7 @@ $HEIGHT=DolGraph::getDefaultGraphSizeForStats('height',160);
 
 $langs->load("companies");
 $langs->load("products");
+$langs->load("stocks");
 $langs->load("bills");
 $langs->load("other");
 
@@ -68,7 +69,7 @@ if (! empty($id) || ! empty($ref) || GETPOST('id') == 'all')
     {
         llxHeader("",$langs->trans("ProductStatistics"));
 
-   	    $type = GETPOST('type');
+   	    $type = GETPOST('type', 'intcomma');
 
        	$helpurl='';
         if ($type == '0')
@@ -124,9 +125,12 @@ if (! empty($id) || ! empty($ref) || GETPOST('id') == 'all')
 
 		$linkback = '<a href="'.DOL_URL_ROOT.'/product/list.php">'.$langs->trans("BackToList").'</a>';
 
-        dol_banner_tab($object, 'ref', $linkback, ($user->societe_id?0:1), 'ref');
+        $shownav = 1;
+        if ($user->societe_id && ! in_array('product', explode(',',$conf->global->MAIN_MODULES_FOR_EXTERNAL))) $shownav=0;
 
-		dol_fiche_end();
+		dol_banner_tab($object, 'ref', $linkback, $shownav, 'ref', '', '', '', 0, '', '', 1);
+
+        dol_fiche_end();
 	}
 	if (GETPOST('id') == 'all')
 	{
@@ -260,7 +264,7 @@ if (! empty($id) || ! empty($ref) || GETPOST('id') == 'all')
 
 		$px = new DolGraph();
 
-		if (! $error)
+		if (! $error && count($graphfiles)>0)
 		{
 			$mesg = $px->isGraphKo();
 			if (! $mesg)
@@ -317,64 +321,67 @@ if (! empty($id) || ! empty($ref) || GETPOST('id') == 'all')
 
 		// Show graphs
 		$i=0;
-		foreach($graphfiles as $key => $val)
+		if ( count($graphfiles)>0)
 		{
-			if (! $graphfiles[$key]['file']) continue;
-
-			if ($graphfiles == 'propal' && ! $user->rights->propale->lire) continue;
-			if ($graphfiles == 'order' && ! $user->rights->commande->lire) continue;
-			if ($graphfiles == 'invoices' && ! $user->rights->facture->lire) continue;
-			if ($graphfiles == 'proposals_suppliers' && ! $user->rights->supplier_proposal->lire) continue;
-			if ($graphfiles == 'invoices_suppliers' && ! $user->rights->fournisseur->facture->lire) continue;
-			if ($graphfiles == 'orders_suppliers' && ! $user->rights->fournisseur->commande->lire) continue;
-
-
-			if ($i % 2 == 0)
+			foreach($graphfiles as $key => $val)
 			{
-				print "\n".'<div class="fichecenter"><div class="fichehalfleft">'."\n";
-			}
-			else
-			{
-				print "\n".'<div class="fichehalfright"><div class="ficheaddleft">'."\n";
-			}
+				if (! $graphfiles[$key]['file']) continue;
 
-			// Show graph
+				if ($graphfiles == 'propal' && ! $user->rights->propale->lire) continue;
+				if ($graphfiles == 'order' && ! $user->rights->commande->lire) continue;
+				if ($graphfiles == 'invoices' && ! $user->rights->facture->lire) continue;
+				if ($graphfiles == 'proposals_suppliers' && ! $user->rights->supplier_proposal->lire) continue;
+				if ($graphfiles == 'invoices_suppliers' && ! $user->rights->fournisseur->facture->lire) continue;
+				if ($graphfiles == 'orders_suppliers' && ! $user->rights->fournisseur->commande->lire) continue;
 
-			print '<table class="noborder" width="100%">';
-			// Label
-			print '<tr class="liste_titre"><td colspan="2">';
-			print $graphfiles[$key]['label'];
-			print '</td></tr>';
-			// Image
-			print '<tr class="impair"><td colspan="2" class="nohover" align="center">';
-			print $graphfiles[$key]['output'];
-			print '</td></tr>';
-			// Date generation
-			print '<tr>';
-			if ($graphfiles[$key]['output'] && ! $px->isGraphKo())
-			{
-			    if (file_exists($dir."/".$graphfiles[$key]['file']) && filemtime($dir."/".$graphfiles[$key]['file'])) print '<td>'.$langs->trans("GeneratedOn",dol_print_date(filemtime($dir."/".$graphfiles[$key]['file']),"dayhour")).'</td>';
-			    else print '<td>'.$langs->trans("GeneratedOn",dol_print_date(dol_now(),"dayhour")).'</td>';
-			}
-			else
-			{
-				print '<td>'.($mesg?'<font class="error">'.$mesg.'</font>':$langs->trans("ChartNotGenerated")).'</td>';
-			}
-			print '<td align="center"><a href="'.$_SERVER["PHP_SELF"].'?id='.(GETPOST('id')?GETPOST('id'):$object->id).((string) $type != ''?'&amp;type='.$type:'').'&amp;action=recalcul&amp;mode='.$mode.'">'.img_picto($langs->trans("ReCalculate"),'refresh').'</a></td>';
-			print '</tr>';
-			print '</table>';
 
-			if ($i % 2 == 0)
-			{
-				print "\n".'</div>'."\n";
-			}
-			else
-			{
-				print "\n".'</div></div></div>';
-				print '<div class="clear"><div class="fichecenter"><br></div></div>'."\n";
-			}
+				if ($i % 2 == 0)
+				{
+					print "\n".'<div class="fichecenter"><div class="fichehalfleft">'."\n";
+				}
+				else
+				{
+					print "\n".'<div class="fichehalfright"><div class="ficheaddleft">'."\n";
+				}
 
-			$i++;
+				// Date generation
+				if ($graphfiles[$key]['output'] && ! $px->isGraphKo())
+				{
+				    if (file_exists($dir."/".$graphfiles[$key]['file']) && filemtime($dir."/".$graphfiles[$key]['file'])) $dategenerated=$langs->trans("GeneratedOn",dol_print_date(filemtime($dir."/".$graphfiles[$key]['file']),"dayhour"));
+				    else $dategenerated=$langs->trans("GeneratedOn",dol_print_date(dol_now(),"dayhour"));
+				}
+				else
+				{
+				    print $dategenerated=($mesg?'<font class="error">'.$mesg.'</font>':$langs->trans("ChartNotGenerated"));
+				}
+				$linktoregenerate='<a href="'.$_SERVER["PHP_SELF"].'?id='.(GETPOST('id')?GETPOST('id'):$object->id).((string) $type != ''?'&amp;type='.$type:'').'&amp;action=recalcul&amp;mode='.$mode.'">'.img_picto($langs->trans("ReCalculate").' ('.$dategenerated.')','refresh').'</a>';
+
+				// Show graph
+				print '<table class="noborder" width="100%">';
+				// Label
+				print '<tr class="liste_titre"><td>';
+				print $graphfiles[$key]['label'];
+				print '</td>';
+				print '<td align="right">'.$linktoregenerate.'</td>';
+				print '</tr>';
+				// Image
+				print '<tr class="impair"><td colspan="2" class="nohover" align="center">';
+				print $graphfiles[$key]['output'];
+				print '</td></tr>';
+				print '</table>';
+
+				if ($i % 2 == 0)
+				{
+					print "\n".'</div>'."\n";
+				}
+				else
+				{
+					print "\n".'</div></div></div>';
+					print '<div class="clear"><div class="fichecenter"><br></div></div>'."\n";
+				}
+
+				$i++;
+			}
 		}
 		// div not closed
 		if ($i % 2 == 1)

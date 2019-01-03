@@ -6,6 +6,7 @@
  * Copyright (C) 2012      Christophe Battarel   <christophe.battarel@altairis.fr>
  * Copyright (C) 2012      Cedric Salvador      <csalvador@gpcsolutions.fr>
  * Copyright (C) 2015      Marcos García        <marcosgdf@gmail.com>
+ * Copyright (C) 2017      Ferran Marcet        <fmarcet@2byte.es>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -119,7 +120,7 @@ class pdf_azur extends ModelePDFPropales
 		}
 		$this->posxdiscount=162;
 		$this->postotalht=174;
-		if (! empty($conf->global->MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT)) $this->posxtva=$this->posxup;
+		if (! empty($conf->global->MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT) || ! empty($conf->global->MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT_COLUMN)) $this->posxtva=$this->posxup;
 		$this->posxpicture=$this->posxtva - (empty($conf->global->MAIN_DOCUMENTS_WITH_PICTURE_WIDTH)?20:$conf->global->MAIN_DOCUMENTS_WITH_PICTURE_WIDTH);	// width of images
 		if ($this->page_largeur < 210) // To work with US executive format
 		{
@@ -272,7 +273,7 @@ class pdf_azur extends ModelePDFPropales
                 $pdf=pdf_getInstance($this->format);
                 $default_font_size = pdf_getPDFFontSize($outputlangs);	// Must be after pdf_getInstance
 	            $pdf->SetAutoPageBreak(1,0);
-	             
+
                 if (class_exists('TCPDF'))
                 {
                     $pdf->setPrintHeader(false);
@@ -321,19 +322,19 @@ class pdf_azur extends ModelePDFPropales
 				$pdf->AddPage();
 				if (! empty($tplidx)) $pdf->useTemplate($tplidx);
 				$pagenb++;
-				
+
                 $heightforinfotot = 40;	// Height reserved to output the info and total part
                 $heightforsignature = empty($conf->global->PROPAL_DISABLE_SIGNATURE)?(pdfGetHeightForHtmlContent($pdf, $outputlangs->transnoentities("ProposalCustomerSignature"))+10):0;
                 $heightforfreetext= (isset($conf->global->MAIN_PDF_FREETEXT_HEIGHT)?$conf->global->MAIN_PDF_FREETEXT_HEIGHT:5);	// Height reserved to output the free text on last page
 	            $heightforfooter = $this->marge_basse + 8;	// Height reserved to output the footer (value include bottom margin)
-                //print $heightforinfotot + $heightforsignature + $heightforfreetext + $heightforfooter;exit;      
-                
+                //print $heightforinfotot + $heightforsignature + $heightforfreetext + $heightforfooter;exit;
+
 				$this->_pagehead($pdf, $object, 1, $outputlangs);
 				$pdf->SetFont('','', $default_font_size - 1);
 				$pdf->MultiCell(0, 3, '');		// Set interline to 3
 				$pdf->SetTextColor(0,0,0);
 
-				
+
 	            $tab_top = 90;
 				$tab_top_newpage = (empty($conf->global->MAIN_PDF_DONOTREPEAT_HEAD)?42:10);
 				$tab_height = 130;
@@ -374,6 +375,14 @@ class pdf_azur extends ModelePDFPropales
 						$salerepobj->fetch($salereparray[0]['id']);
 						if (! empty($salerepobj->signature)) $notetoshow=dol_concatdesc($notetoshow, $salerepobj->signature);
 					}
+				}
+				if (! empty($conf->global->MAIN_ADD_CREATOR_IN_NOTE) && $object->user_author_id > 0)
+				{
+				    $tmpuser=new User($this->db);
+				    $tmpuser->fetch($object->user_author_id);
+				    $notetoshow.='Affaire suivi par '.$tmpuser->getFullName($langs);
+				    if ($tmpuser->email) $notetoshow.=',  Mail: '.$tmpuser->email;
+				    if ($tmpuser->office_phone) $notetoshow.=', Tel: '.$tmpuser->office_phone;
 				}
 				if ($notetoshow)
 				{
@@ -442,8 +451,6 @@ class pdf_azur extends ModelePDFPropales
 					// Description of product line
 					$curX = $this->posxdesc-1;
 
-					$showpricebeforepagebreak=1;
-					
 					$pdf->startTransaction();
 					pdf_writelinedesc($pdf,$object,$i,$outputlangs,$this->posxpicture-$curX,3,$curX,$curY,$hideref,$hidedesc);
 					$pageposafter=$pdf->getPage();
@@ -545,13 +552,14 @@ class pdf_azur extends ModelePDFPropales
 					// Collecte des totaux par valeur de tva dans $this->tva["taux"]=total_tva
 					if ($conf->multicurrency->enabled && $object->multicurrency_tx != 1) $tvaligne=$object->lines[$i]->multicurrency_total_tva;
 					else $tvaligne=$object->lines[$i]->total_tva;
+
 					$localtax1ligne=$object->lines[$i]->total_localtax1;
 					$localtax2ligne=$object->lines[$i]->total_localtax2;
 					$localtax1_rate=$object->lines[$i]->localtax1_tx;
 					$localtax2_rate=$object->lines[$i]->localtax2_tx;
 					$localtax1_type=$object->lines[$i]->localtax1_type;
-					$localtax2_type=$object->lines[$i]->localtax2_type;	
-						
+					$localtax2_type=$object->lines[$i]->localtax2_type;
+
 					if ($object->remise_percent) $tvaligne-=($tvaligne*$object->remise_percent)/100;
 					if ($object->remise_percent) $localtax1ligne-=($localtax1ligne*$object->remise_percent)/100;
 					if ($object->remise_percent) $localtax2ligne-=($localtax2ligne*$object->remise_percent)/100;
@@ -659,7 +667,7 @@ class pdf_azur extends ModelePDFPropales
 				{
 				    $posy=$this->_signature_area($pdf, $object, $posy, $outputlangs);
 				}
-				
+
 				// Pied de page
 				$this->_pagefoot($pdf,$object,$outputlangs);
 				if (method_exists($pdf,'AliasNbPages')) $pdf->AliasNbPages();
@@ -764,9 +772,6 @@ class pdf_azur extends ModelePDFPropales
 			$this->error=$langs->trans("ErrorConstantNotDefined","PROP_OUTPUTDIR");
 			return 0;
 		}
-
-		$this->error=$langs->trans("ErrorUnknown");
-		return 0;   // Erreur par defaut
 	}
 
 	/**
@@ -1005,6 +1010,8 @@ class pdf_azur extends ModelePDFPropales
 		// Show VAT by rates and total
 		$pdf->SetFillColor(248,248,248);
 
+		$total_ttc = ($conf->multicurrency->enabled && $object->multicurrency_tx != 1) ? $object->multicurrency_total_ttc : $object->total_ttc;
+
 		$this->atleastoneratenotnull=0;
 		if (empty($conf->global->MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT))
 		{
@@ -1181,7 +1188,6 @@ class pdf_azur extends ModelePDFPropales
 				$pdf->SetFillColor(224,224,224);
 				$pdf->MultiCell($col2x-$col1x, $tab2_hl, $outputlangs->transnoentities("TotalTTC"), $useborder, 'L', 1);
 
-				$total_ttc = ($conf->multicurrency->enabled && $object->multiccurency_tx != 1) ? $object->multicurrency_total_ttc : $object->total_ttc;
 				$pdf->SetXY($col2x, $tab2_top + $tab2_hl * $index);
 				$pdf->MultiCell($largcol2, $tab2_hl, price($total_ttc, 0, $outputlangs), $useborder, 'R', 1);
 			}
@@ -1458,6 +1464,21 @@ class pdf_azur extends ModelePDFPropales
 			$pdf->SetXY($posx,$posy);
 			$pdf->SetTextColor(0,0,60);
 			$pdf->MultiCell(100, 3, $outputlangs->transnoentities("CustomerCode")." : " . $outputlangs->transnoentities($object->thirdparty->code_client), '', 'R');
+		}
+
+		// Get contact
+		if (!empty($conf->global->DOC_SHOW_FIRST_SALES_REP))
+		{
+		    $arrayidcontact=$object->getIdContact('internal','SALESREPFOLL');
+		    if (count($arrayidcontact) > 0)
+		    {
+		        $usertmp=new User($this->db);
+		        $usertmp->fetch($arrayidcontact[0]);
+                $posy+=4;
+                $pdf->SetXY($posx,$posy);
+		        $pdf->SetTextColor(0,0,60);
+		        $pdf->MultiCell(100, 3, $langs->trans("SalesRepresentative")." : ".$usertmp->getFullName($langs), '', 'R');
+		    }
 		}
 
 		$posy+=2;

@@ -125,9 +125,8 @@ $dolibarr_main_db_pass='';
 // This parameter contains the name of the driver used to access your
 // Dolibarr database.
 // Default value: none
-// Possible values: mysql, mysqli, pgsql
+// Possible values: mysqli, pgsql
 // Examples:
-// $dolibarr_main_db_type='mysql';
 // $dolibarr_main_db_type='mysqli';
 // $dolibarr_main_db_type='pgsql';
 //
@@ -135,7 +134,7 @@ $dolibarr_main_db_type='';
 
 
 // dolibarr_main_db_character_set
-// Database character set used to store data (forced during database creation).
+// Database character set used to store data (forced during database creation. value of database is then used).
 // Default value: depends on database driver
 // Examples:
 // dolibarr_main_db_character_set='utf8';
@@ -144,12 +143,12 @@ $dolibarr_main_db_character_set='utf8';
 
 
 // dolibarr_main_db_collation
-// Database character set used to sort data (forced during database creation).
+// Database character set used to sort data (forced during database creation. value of database is then used).
 // Default value: depends on database driver
 // Examples:
-// dolibarr_main_db_collation='utf8_general_ci';
+// dolibarr_main_db_collation='utf8_unicode_ci';
 //
-$dolibarr_main_db_collation='utf8_general_ci';
+$dolibarr_main_db_collation='utf8_unicode_ci';
 
 
 

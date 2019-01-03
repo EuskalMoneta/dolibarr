@@ -30,6 +30,7 @@ require '../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/contact/class/contact.class.php';
 require_once DOL_DOCUMENT_ROOT.'/adherents/class/adherent.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/member.lib.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/functions2.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/adherents/class/adherent_type.class.php';
 
 $langs->load("companies");
@@ -77,7 +78,9 @@ if ($object->id > 0)
 
 	$langs->load("companies");
 
-	llxHeader("",$langs->trans("Agenda"),'');
+	$title=$langs->trans("Member") . " - " . $langs->trans("Agenda");
+	$helpurl="EN:Module_Foundations|FR:Module_Adh&eacute;rents|ES:M&oacute;dulo_Miembros";
+	llxHeader("",$title,$helpurl);
 
 	if (! empty($conf->notification->enabled)) $langs->load("mails");
 	$head = member_prepare_head($object);
@@ -118,6 +121,13 @@ if ($object->id > 0)
 
 	print '</table>';
 
+	
+	print '<br>';
+	
+	$object->info($id);
+	print dol_print_object_info($object, 1);
+	
+	
 	print '</div>';
 
 	dol_fiche_end();
@@ -131,7 +141,7 @@ if ($object->id > 0)
 
     if (! empty($conf->agenda->enabled))
     {
-        print '<div class="inline-block divButAction"><a class="butAction" href="'.DOL_URL_ROOT.'/comm/action/card.php?action=create&backtopage=1">'.$langs->trans("AddAction").'</a></div>';
+        print '<div class="inline-block divButAction"><a class="butAction" href="'.DOL_URL_ROOT.'/comm/action/card.php?action=create&backtopage=1&origin=member&originid='.$id.'">'.$langs->trans("AddAction").'</a></div>';
     }
 
     print '</div>';
@@ -157,10 +167,10 @@ if ($object->id > 0)
     print load_fiche_titre($langs->trans("ActionsOnMember"),$out,'');
 
     // List of todo actions
-    show_actions_todo($conf,$langs,$db,$object);
+    //show_actions_todo($conf,$langs,$db,$object);
 
     // List of done actions
-    show_actions_done($conf,$langs,$db,$object);
+    show_actions_done($conf,$langs,$db,$object,null,0,'','');
 }
 
 

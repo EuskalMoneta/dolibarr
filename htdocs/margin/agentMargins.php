@@ -86,29 +86,34 @@ $text=$langs->trans("Margins");
 $head=marges_prepare_head($user);
 $titre=$langs->trans("Margins");
 $picto='margin';
-dol_fiche_head($head, 'agentMargins', $titre, 0, $picto);
 
 print '<form method="post" name="sel" action="'.$_SERVER['PHP_SELF'].'">';
+
+dol_fiche_head($head, 'agentMargins', $titre, 0, $picto);
+
 print '<table class="border" width="100%">';
 
-print '<tr><td width="20%">'.$langs->trans('SalesRepresentative').'</td>';
-print '<td colspan="4">';
+print '<tr><td class="titlefield">'.$langs->trans('SalesRepresentative').'</td>';
+print '<td class="maxwidthonsmartphone" colspan="4">';
 print $form->select_dolusers($agentid, 'agentid', 1, '', $user->rights->margins->read->all ? 0 : 1, '', '', 0, 0, 0, '', 0, '', 'maxwidth300');
 print '</td></tr>';
 
 // Start date
 print '<td>'.$langs->trans('DateStart').' ('.$langs->trans("DateValidation").')</td>';
-print '<td width="20%">';
+print '<td>';
 $form->select_date($startdate,'startdate','','',1,"sel",1,1);
 print '</td>';
-print '<td width="20%">'.$langs->trans('DateEnd').' ('.$langs->trans("DateValidation").')</td>';
-print '<td width="20%">';
+print '<td>'.$langs->trans('DateEnd').' ('.$langs->trans("DateValidation").')</td>';
+print '<td>';
 $form->select_date($enddate,'enddate','','',1,"sel",1,1);
 print '</td>';
 print '<td style="text-align: center;">';
 print '<input type="submit" class="button" value="'.dol_escape_htmltag($langs->trans('Refresh')).'" />';
 print '</td></tr>';
 print "</table>";
+
+dol_fiche_end();
+
 print '</form>';
 
 $sql = "SELECT";
@@ -125,7 +130,7 @@ $sql.= ", ".MAIN_DB_PREFIX."facturedet as d";
 $sql.= ", ".MAIN_DB_PREFIX."societe_commerciaux as sc";
 $sql.= ", ".MAIN_DB_PREFIX."user as u";
 $sql.= " WHERE f.fk_soc = s.rowid";
-$sql.= " AND f.entity = ".$conf->entity;
+$sql.= ' AND f.entity IN ('.getEntity('facture', 1).')';
 $sql.= " AND sc.fk_soc = f.fk_soc";
 $sql.= " AND (d.product_type = 0 OR d.product_type = 1)";
 if (! empty($conf->global->AGENT_CONTACT_TYPE))
@@ -133,7 +138,7 @@ if (! empty($conf->global->AGENT_CONTACT_TYPE))
 else
 	$sql .= " AND sc.fk_user = u.rowid";
 $sql.= " AND f.fk_statut > 0";
-$sql.= " AND s.entity = ".$conf->entity;
+$sql.= ' AND s.entity IN ('.getEntity('societe', 1).')';
 $sql.= " AND d.fk_facture = f.rowid";
 if ($agentid > 0) {
 	if (! empty($conf->global->AGENT_CONTACT_TYPE))
@@ -165,8 +170,13 @@ if ($result)
 	$num = $db->num_rows($result);
 
 	print '<br>';
-	print_barre_liste($langs->trans("MarginDetails"),$page,$_SERVER["PHP_SELF"],"",$sortfield,$sortorder,'',0,0,'');
+	print_barre_liste($langs->trans("MarginDetails"),$page,$_SERVER["PHP_SELF"],"",$sortfield,$sortorder,'',$num,$num,'');
 
+	if ($conf->global->MARGIN_TYPE == "1")
+	    $labelcostprice=$langs->trans('BuyingPrice');
+	else   // value is 'costprice' or 'pmp'
+	    $labelcostprice=$langs->trans('CostPrice');
+	
 	$i = 0;
 	print "<table class=\"noborder\" width=\"100%\">";
 
@@ -177,7 +187,7 @@ if ($result)
 		print_liste_field_titre($langs->trans("SalesRepresentative"),$_SERVER["PHP_SELF"],"u.lastname","","&amp;agentid=".$agentid,'',$sortfield,$sortorder);
 
 	print_liste_field_titre($langs->trans("SellingPrice"),$_SERVER["PHP_SELF"],"selling_price","","&amp;agentid=".$agentid,'align="right"',$sortfield,$sortorder);
-	print_liste_field_titre($langs->trans("BuyingPrice"),$_SERVER["PHP_SELF"],"buying_price","","&amp;agentid=".$agentid,'align="right"',$sortfield,$sortorder);
+	print_liste_field_titre($labelcostprice,$_SERVER["PHP_SELF"],"buying_price","","&amp;agentid=".$agentid,'align="right"',$sortfield,$sortorder);
 	print_liste_field_titre($langs->trans("Margin"),$_SERVER["PHP_SELF"],"marge","","&amp;agentid=".$agentid,'align="right"',$sortfield,$sortorder);
 	if (! empty($conf->global->DISPLAY_MARGIN_RATES))
 		print_liste_field_titre($langs->trans("MarginRate"),$_SERVER["PHP_SELF"],"","","&amp;agentid=".$agentid,'align="right"',$sortfield,$sortorder);
@@ -244,17 +254,14 @@ else
 }
 $db->free($result);
 
-
-llxFooter();
-$db->close();
-
-?>
-
-<script type="text/javascript">
+print "\n".'<script type="text/javascript">
 $(document).ready(function() {
-
   $("#agentid").change(function() {
      $("div.fiche form").submit();
   });
 });
-</script>
+</script>'."\n";
+
+llxFooter();
+$db->close();
+

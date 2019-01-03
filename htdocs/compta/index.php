@@ -117,7 +117,7 @@ if (count($listofsearchfields))
 	{
 		if ($i == 0) print '<tr class="liste_titre"><td colspan="3">'.$langs->trans("Search").'</td></tr>';
 		print '<tr '.$bc[false].'>';
-		print '<td class="nowrap"><label for="'.$key.'">'.$langs->trans($value["text"]).'</label></td><td><input type="text" class="flat inputsearch" name="'.$key.'" id="'.$key.'" size="14"></td>';
+		print '<td class="nowrap"><label for="'.$key.'">'.$langs->trans($value["text"]).'</label></td><td><input type="text" class="flat inputsearch" name="'.$key.'" id="'.$key.'"></td>';
 		if ($i == 0) print '<td rowspan="'.count($listofsearchfields).'"><input type="submit" value="'.$langs->trans("Search").'" class="button"></td>';
 		print '</tr>';
 		$i++;
@@ -509,10 +509,11 @@ if (! empty($conf->don->enabled) && $user->rights->societe->lire)
 		$i = 0;
 
 		print '<table class="noborder" width="100%">';
-		print '<tr class="liste_titre"><td>'.$langs->trans("BoxTitleLastModifiedDonations",$max).'</td>';
-        print '<td class="liste_titre" align="right">'.$langs->trans("AmountTTC").'</td>';
-		print '<td class="liste_titre" align="right">'.$langs->trans("DateModificationShort").'</td>';
-        print '<td class="liste_titre" width="16">&nbsp;</td>';
+		print '<tr class="liste_titre">';
+		print '<td>'.$langs->trans("BoxTitleLastModifiedDonations",$max).'</td>';
+        print '<td align="right">'.$langs->trans("AmountTTC").'</td>';
+		print '<td align="right">'.$langs->trans("DateModificationShort").'</td>';
+        print '<td width="16">&nbsp;</td>';
 		print '</tr>';
 		if ($num)
 		{
@@ -577,7 +578,7 @@ if (! empty($conf->tax->enabled) && $user->rights->tax->charges->lire)
 
 			print '<table class="noborder" width="100%">';
 			print '<tr class="liste_titre">';
-			print '<td>'.$langs->trans("ContributionsToPay").($num?' <span class="badge">'.$num.'</span>':'').'</td>';
+			print '<td>'.$langs->trans("ContributionsToPay").($num?' <a href="'.DOL_URL_ROOT.'/compta/sociales/index.php?status=0"><span class="badge">'.$num.'</span></a>':'').'</td>';
 			print '<td align="center">'.$langs->trans("DateDue").'</td>';
 			print '<td align="right">'.$langs->trans("AmountTTC").'</td>';
 			print '<td align="right">'.$langs->trans("Paid").'</td>';
@@ -663,7 +664,7 @@ if (! empty($conf->facture->enabled) && ! empty($conf->commande->enabled) && $us
 			$i = 0;
 			print '<table class="noborder" width="100%">';
 			print "<tr class=\"liste_titre\">";
-			print '<td colspan="2">'.$langs->trans("OrdersToBill").' <a href="'.DOL_URL_ROOT.'/commande/list.php?status=3&amp;afacturer=1"><span class="badge">'.$num.'</span></a></td>';
+			print '<td colspan="2">'.$langs->trans("OrdersDeliveredToBill").' <a href="'.DOL_URL_ROOT.'/commande/list.php?viewstatut=3&amp;billed=0"><span class="badge">'.$num.'</span></a></td>';
 			if (! empty($conf->global->MAIN_SHOW_HT_ON_SUMMARY)) print '<td align="right">'.$langs->trans("AmountHT").'</td>';
 			print '<td align="right">'.$langs->trans("AmountTTC").'</td>';
 			print '<td align="right">'.$langs->trans("ToBill").'</td>';

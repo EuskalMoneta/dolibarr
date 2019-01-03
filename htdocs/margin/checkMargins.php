@@ -118,24 +118,29 @@ llxHeader('', $title);
 // Show tabs
 $head = marges_prepare_head($user);
 $picto = 'margin';
-dol_fiche_head($head, $langs->trans('checkMargins'), $title, 0, $picto);
 
 print '<form method="post" name="sel" action="' . $_SERVER['PHP_SELF'] . '">';
+
+dol_fiche_head($head, $langs->trans('checkMargins'), $title, 0, $picto);
+
 print '<table class="border" width="100%">';
 
 // Start date
-print '<td>' . $langs->trans('DateStart') . ' (' . $langs->trans("DateValidation") . ')</td>';
-print '<td width="20%">';
+print '<td class="titlefield">' . $langs->trans('DateStart') . ' (' . $langs->trans("DateValidation") . ')</td>';
+print '<td>';
 $form->select_date($startdate, 'startdate', '', '', 1, "sel", 1, 1);
 print '</td>';
-print '<td width="20%">' . $langs->trans('DateEnd') . ' (' . $langs->trans("DateValidation") . ')</td>';
-print '<td width="20%">';
+print '<td>' . $langs->trans('DateEnd') . ' (' . $langs->trans("DateValidation") . ')</td>';
+print '<td>';
 $form->select_date($enddate, 'enddate', '', '', 1, "sel", 1, 1);
 print '</td>';
 print '<td style="text-align: center;">';
 print '<input type="submit" class="button" value="' . dol_escape_htmltag($langs->trans('Refresh')) . '" name="button_search" />';
 print '</td></tr>';
 print "</table>";
+
+dol_fiche_end();
+
 
 $sql = "SELECT";
 $sql .= " f.facnumber, f.rowid as invoiceid, d.rowid as invoicedetid, d.buy_price_ht, d.total_ht, d.subprice, d.label, d.description , d.qty";
@@ -152,7 +157,7 @@ if (! empty($enddate))
 $sql .= " AND d.buy_price_ht IS NOT NULL";
 $sql .= $db->order($sortfield, $sortorder);
 
-$nbtotalofrecords = 0;
+$nbtotalofrecords = '';
 if (empty($conf->global->MAIN_DISABLE_FULL_SCANLIST)) {
 	
 	dol_syslog(__FILE__, LOG_DEBUG);
@@ -174,18 +179,22 @@ if ($result) {
 	print '<br>';
 	print_barre_liste($langs->trans("MarginDetails"), $page, $_SERVER["PHP_SELF"], "", $sortfield, $sortorder, '', $num, $nbtotalofrecords, '');
 	
-	print "<table class=\"noborder\" width=\"100%\">";
+	if ($conf->global->MARGIN_TYPE == "1")
+	    $labelcostprice=$langs->trans('BuyingPrice');
+	else   // value is 'costprice' or 'pmp'
+	    $labelcostprice=$langs->trans('CostPrice');
+	
+	$moreforfilter='';
+	
+    print '<div class="div-table-responsive">';
+    print '<table class="tagtable liste'.($moreforfilter?" listwithfilterbefore":"").'">'."\n";
 	
 	print '<tr class="liste_titre">';
 	
 	print_liste_field_titre($langs->trans("Ref"), $_SERVER["PHP_SELF"], "f.ref", "", $options, '', $sortfield, $sortorder);
 	print_liste_field_titre($langs->trans("Description"), $_SERVER["PHP_SELF"], "", "", $options, 'width=20%', $sortfield, $sortorder);
 	print_liste_field_titre($langs->trans("UnitPriceHT"), $_SERVER["PHP_SELF"], "d.subprice", "", $options, 'align="right"', $sortfield, $sortorder);
-	if ($conf->global->MARGIN_TYPE == "1") {
-		print_liste_field_titre($langs->trans("BuyingPrice"), $_SERVER["PHP_SELF"], "d.buy_price_ht", "", $options, 'align="right"', $sortfield, $sortorder);
-	} else {
-		print_liste_field_titre($langs->trans("CostPrice"), $_SERVER["PHP_SELF"], "d.buy_price_ht", "", $options, 'align="right"', $sortfield, $sortorder);
-	}
+	print_liste_field_titre($labelcostprice, $_SERVER["PHP_SELF"], "d.buy_price_ht", "", $options, 'align="right"', $sortfield, $sortorder);
 	print_liste_field_titre($langs->trans("Qty"), $_SERVER["PHP_SELF"], "d.qty", "", $options, 'align="right"', $sortfield, $sortorder);
 	print_liste_field_titre($langs->trans("AmountTTC"), $_SERVER["PHP_SELF"], "d.total_ht", "", $options, 'align="right"', $sortfield, $sortorder);
 	
@@ -239,15 +248,17 @@ if ($result) {
 		}
 	}
 	print "</table>";
+	
+	print "</div>";
 } else {
 	dol_print_error($db);
 }
 
-dol_fiche_end();
 
 print '<div class="tabsAction">' . "\n";
 print '<div class="inline-block divButAction"><input type="submit"  name="button_updatemagins" id="button_updatemagins" class="butAction" value="' . $langs->trans("Update") . '" /></div>';
 print '</div>';
+
 print '</form>';
 
 $db->free($result);

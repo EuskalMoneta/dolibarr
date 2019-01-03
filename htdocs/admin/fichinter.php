@@ -43,7 +43,7 @@ if (! $user->admin) accessforbidden();
 $action = GETPOST('action','alpha');
 $value = GETPOST('value','alpha');
 $label = GETPOST('label','alpha');
-$scandir = GETPOST('scandir','alpha');
+$scandir = GETPOST('scan_dir','alpha');
 $type='ficheinter';
 
 
@@ -232,6 +232,20 @@ elseif ($action == 'set_FICHINTER_PRINT_PRODUCTS')
     {
         setEventMessages($langs->trans("Error"), null, 'errors');
     }
+} elseif ($action == 'set_FICHINTER_USE_SERVICE_DURATION') {
+	$val = GETPOST('FICHINTER_USE_SERVICE_DURATION', 'alpha');
+	$res = dolibarr_set_const($db, "FICHINTER_USE_SERVICE_DURATION", ($val == 'on' ? 1 : 0), 'bool', 0, '',
+		$conf->entity);
+
+	if (!$res > 0) {
+		$error++;
+	}
+
+	if (!$error) {
+		setEventMessages($langs->trans("SetupSaved"), null, 'mesgs');
+	} else {
+		setEventMessages($langs->trans("Error"), null, 'errors');
+	}
 }
 
 
@@ -444,7 +458,7 @@ foreach ($dirmodels as $reldir)
 		    				if (in_array($name, $def))
 		    				{
 		    					print "<td align=\"center\">\n";
-		    					print '<a href="'.$_SERVER["PHP_SELF"].'?action=del&amp;value='.$name.'&amp;scandir='.$module->scandir.'&amp;label='.urlencode($module->name).'">';
+		    					print '<a href="'.$_SERVER["PHP_SELF"].'?action=del&amp;value='.$name.'&amp;scan_dir='.$module->scandir.'&amp;label='.urlencode($module->name).'">';
 		    					print img_picto($langs->trans("Enabled"),'switch_on');
 		    					print '</a>';
 		    					print "</td>";
@@ -452,7 +466,7 @@ foreach ($dirmodels as $reldir)
 		    				else
 		    				{
 		    					print "<td align=\"center\">\n";
-		    					print '<a href="'.$_SERVER["PHP_SELF"].'?action=set&amp;value='.$name.'&amp;scandir='.$module->scandir.'&amp;label='.urlencode($module->name).'">'.img_picto($langs->trans("Disabled"),'switch_off').'</a>';
+		    					print '<a href="'.$_SERVER["PHP_SELF"].'?action=set&amp;value='.$name.'&amp;scan_dir='.$module->scandir.'&amp;label='.urlencode($module->name).'">'.img_picto($langs->trans("Disabled"),'switch_off').'</a>';
 		    					print "</td>";
 		    				}
 
@@ -464,7 +478,7 @@ foreach ($dirmodels as $reldir)
 		    				}
 		    				else
 		    				{
-		    					print '<a href="'.$_SERVER["PHP_SELF"].'?action=setdoc&amp;value='.$name.'&amp;scandir='.$module->scandir.'&amp;label='.urlencode($module->name).'" alt="'.$langs->trans("Default").'">'.img_picto($langs->trans("Disabled"),'off').'</a>';
+		    					print '<a href="'.$_SERVER["PHP_SELF"].'?action=setdoc&amp;value='.$name.'&amp;scan_dir='.$module->scandir.'&amp;label='.urlencode($module->name).'" alt="'.$langs->trans("Default").'">'.img_picto($langs->trans("Disabled"),'off').'</a>';
 		    				}
 		    				print '</td>';
 
@@ -568,7 +582,22 @@ print '/>';
 print '</td><td align="right">';
 print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
 print "</td></tr>\n";
-
+// Use services duration
+$var = !$var;
+print '<form action="' . $_SERVER["PHP_SELF"] . '" method="post">';
+print '<input type="hidden" name="token" value="' . $_SESSION['newtoken'] . '">';
+print '<input type="hidden" name="action" value="set_FICHINTER_USE_SERVICE_DURATION">';
+print '<tr ' . $bc[$var] . '>';
+print '<td>';
+print $langs->trans("UseServicesDurationOnFichinter");
+print '</td>';
+print '<td align="center">';
+print '<input type="checkbox" name="FICHINTER_USE_SERVICE_DURATION"' . ($conf->global->FICHINTER_USE_SERVICE_DURATION?' checked':'') . '>';
+print '</td>';
+print '<td align="right">';
+print '<input type="submit" class="button" value="' . $langs->trans("Modify") . '">';
+print '</td>';
+print '</tr>';
 print '</form>';
 
 

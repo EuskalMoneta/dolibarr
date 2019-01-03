@@ -72,7 +72,7 @@ if ($id > 0 || ! empty($ref))
 	$result = $product->fetch($id, $ref);
 
 	$object = $product;
-	
+
 	$parameters=array('id'=>$id);
 	$reshook=$hookmanager->executeHooks('doActions',$parameters,$product,$action);    // Note that $action and $object may have been modified by some hooks
 	if ($reshook < 0) setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
@@ -90,11 +90,14 @@ if ($id > 0 || ! empty($ref))
 		if ($reshook < 0) setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
 
         $linkback = '<a href="'.DOL_URL_ROOT.'/product/list.php">'.$langs->trans("BackToList").'</a>';
-		
-        dol_banner_tab($object, 'ref', $linkback, ($user->societe_id?0:1), 'ref');
-        
+
+        $shownav = 1;
+        if ($user->societe_id && ! in_array('product', explode(',',$conf->global->MAIN_MODULES_FOR_EXTERNAL))) $shownav=0;
+
+        dol_banner_tab($object, 'ref', $linkback, $shownav, 'ref');
+
         print '<div class="fichecenter">';
-        
+
         print '<div class="underbanner clearboth"></div>';
         print '<table class="border tableforfield" width="100%">';
 
@@ -104,9 +107,9 @@ if ($id > 0 || ! empty($ref))
 
         print '</div>';
         print '<div style="clear:both"></div>';
-		
+
 		dol_fiche_end();
-		
+
 
 		$now=dol_now();
 
@@ -123,7 +126,7 @@ if ($id > 0 || ! empty($ref))
 		$sql.= ", ".MAIN_DB_PREFIX."contratdet as cd";
 		$sql.= " WHERE c.rowid = cd.fk_contrat";
 		$sql.= " AND c.fk_soc = s.rowid";
-		$sql.= " AND c.entity IN (".getEntity('contrat', 1).")";
+		$sql.= " AND c.entity IN (".getEntity('contract', 1).")";
 		$sql.= " AND cd.fk_product =".$product->id;
 		if (!$user->rights->societe->client->voir && !$socid) $sql.= " AND s.rowid = sc.fk_soc AND sc.fk_user = " .$user->id;
 		if ($socid) $sql.= " AND s.rowid = ".$socid;
@@ -135,10 +138,27 @@ if ($id > 0 || ! empty($ref))
 		if ($result)
 		{
 			$num = $db->num_rows($result);
+            if (! empty($id))
+                $option .= '&amp;id=' . $product->id;
+            if (! empty($search_month))
+                $option .= '&amp;search_month=' . $search_month;
+            if (! empty($search_year))
+                $option .= '&amp;search_year=' . $search_year;
+
+            print '<form method="post" action="' . $_SERVER['PHP_SELF'] . '?id=' . $product->id . '" name="search_form">' . "\n";
+            if (! empty($sortfield))
+                print '<input type="hidden" name="sortfield" value="' . $sortfield . '"/>';
+            if (! empty($sortorder))
+                print '<input type="hidden" name="sortorder" value="' . $sortorder . '"/>';
+            if (! empty($page)) {
+                print '<input type="hidden" name="page" value="' . $page . '"/>';
+                $option .= '&amp;page=' . $page;
+            }
 
 			print_barre_liste($langs->trans("Contrats"),$page,$_SERVER["PHP_SELF"],"&amp;id=$product->id",$sortfield,$sortorder,'',$num,0,'');
 
 			$i = 0;
+            print '<div class="div-table-responsive">';
 			print '<table class="tagtable liste listwithfilterbefore" width="100%">';
 
 			print '<tr class="liste_titre">';
@@ -180,13 +200,15 @@ if ($id > 0 || ! empty($ref))
 					$i++;
 				}
 			}
+
+			print '</table>';
+			print '</div>';
+			print '</form>';
 		}
 		else
 		{
 			dol_print_error($db);
 		}
-		print "</table>";
-		print '<br>';
 		$db->free($result);
 	}
 }

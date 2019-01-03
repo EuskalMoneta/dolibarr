@@ -78,13 +78,13 @@ if (! empty($conf->global->PROJECT_USE_OPPORTUNITIES))
 	    {
 	        print '<tr class="impair"><td align="center" colspan="2">';
    	        $data=array('series'=>$dataseries);
-   	        dol_print_graph('stats',400,180,$data,1,'pie',0,'',0,$totaloppnb?0:1);
+   	        dol_print_graph('stats',360,180,$data,1,'pie',0,'',0,$totaloppnb?0:1);
 	        print '</td></tr>';
 	    }
 	    //if ($totalinprocess != $total)
 	    //print '<tr class="liste_total"><td>'.$langs->trans("Total").' ('.$langs->trans("CustomersOrdersRunning").')</td><td align="right">'.$totalinprocess.'</td></tr>';
-	    print '<tr class="liste_total"><td>'.$langs->trans("OpportunityTotalAmount").' ('.$langs->trans("WonLostExcluded").')</td><td align="right">'.price($totalamount, 0, '', 1, -1, -1, $conf->currency).'</td></tr>';
-	    print '<tr class="liste_total"><td>';
+	    print '<tr class="liste_total"><td class="maxwidth200 tdoverflow">'.$langs->trans("OpportunityTotalAmount").' ('.$langs->trans("WonLostExcluded").')</td><td align="right">'.price($totalamount, 0, '', 1, -1, -1, $conf->currency).'</td></tr>';
+	    print '<tr class="liste_total"><td class="minwidth200 tdoverflow">';
 	    //print $langs->trans("OpportunityPonderatedAmount").' ('.$langs->trans("WonLostExcluded").')';
 	    print $form->textwithpicto($langs->trans("OpportunityPonderatedAmount").' ('.$langs->trans("WonLostExcluded").')', $langs->trans("OpportunityPonderatedAmountDesc"), 1);
 	    print '</td><td align="right">'.price(price2num($ponderated_opp_amount,'MT'), 0, '', 1, -1, -1, $conf->currency).'</td></tr>';

@@ -158,10 +158,10 @@ if (! empty($conf->propal->enabled) && $user->rights->propal->lire)
 		print '<tr class="liste_titre">';
 		print '<td colspan="3">'.$langs->trans("ProposalsDraft").($num?' <span class="badge">'.$num.'</span>':'').'</td></tr>';
 
+		$var=true;
 		if ($num > 0)
 		{
 			$i = 0;
-			$var=true;
 			while ($i < $num)
 			{
 				$obj = $db->fetch_object($resql);
@@ -239,10 +239,10 @@ if (! empty($conf->supplier_proposal->enabled) && $user->rights->supplier_propos
         print '<tr class="liste_titre">';
         print '<td colspan="3">'.$langs->trans("SupplierProposalsDraft").($num?' <span class="badge">'.$num.'</span>':'').'</td></tr>';
 
+        $var=true;
         if ($num > 0)
         {
             $i = 0;
-            $var=true;
             while ($i < $num)
             {
                 $obj = $db->fetch_object($resql);
@@ -318,10 +318,10 @@ if (! empty($conf->commande->enabled) && $user->rights->commande->lire)
 		print '<tr class="liste_titre">';
 		print '<td colspan="3">'.$langs->trans("DraftOrders").($num?' <span class="badge">'.$num.'</span>':'').'</td></tr>';
 
-		if ($num)
+		$var = true;
+		if ($num > 0)
 		{
 			$i = 0;
-			$var = true;
 			while ($i < $num)
 			{
 				$var=!$var;
@@ -399,10 +399,10 @@ if (! empty($conf->fournisseur->enabled) && $user->rights->fournisseur->commande
         print '<tr class="liste_titre">';
         print '<td colspan="3">'.$langs->trans("DraftSuppliersOrders").($num?' <span class="badge">'.$num.'</span>':'').'</td></tr>';
 
-        if ($num)
+        $var = true;
+        if ($num > 0)
         {
             $i = 0;
-            $var = true;
             while ($i < $num)
             {
                 $var=!$var;
@@ -611,7 +611,7 @@ if (! empty($conf->contrat->enabled) && $user->rights->contrat->lire && 0) // TO
 	$sql.= ", ".MAIN_DB_PREFIX."product as p";
 	if (! $user->rights->societe->client->voir && ! $socid) $sql.= ", ".MAIN_DB_PREFIX."societe_commerciaux as sc";
 	$sql.= " WHERE c.fk_soc = s.rowid";
-	$sql.= " AND c.entity IN (".getEntity('contrat', 1).")";
+	$sql.= " AND c.entity IN (".getEntity('contract', 1).")";
 	$sql.= " AND c.fk_product = p.rowid";
 	if (! $user->rights->societe->client->voir && ! $socid)	$sql.= " AND s.rowid = sc.fk_soc AND sc.fk_user = " .$user->id;
 	if ($socid) $sql.= " AND s.rowid = ".$socid;

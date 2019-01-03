@@ -238,11 +238,10 @@ if ($action == 'add')
             $adh->pass        = $_POST["pass1"];
         }
         $adh->photo       = $_POST["photo"];
-        $adh->note        = $_POST["note"];
         $adh->country_id  = $_POST["country_id"];
         $adh->state_id    = $_POST["state_id"];
         $adh->typeid      = $_POST["type"];
-        $adh->note        = $_POST["comment"];
+        $adh->note_private= $_POST["note_private"];
         $adh->morphy      = $_POST["morphy"];
         $adh->birth       = $birthday;
 
@@ -301,20 +300,27 @@ if ($action == 'add')
             {
                 if ($conf->global->MEMBER_NEWFORM_PAYONLINE == 'paybox')
                 {
-                    $urlback=DOL_MAIN_URL_ROOT.'/public/paybox/newpayment.php?from=membernewform&source=membersubscription&ref='.$adh->ref;
+                    $urlback=DOL_MAIN_URL_ROOT.'/public/paybox/newpayment.php?from=membernewform&source=membersubscription&ref='.urlencode($adh->ref);
                     if (price2num(GETPOST('amount'))) $urlback.='&amount='.price2num(GETPOST('amount'));
                     if (GETPOST('email')) $urlback.='&email='.urlencode(GETPOST('email'));
                 }
                 else if ($conf->global->MEMBER_NEWFORM_PAYONLINE == 'paypal')
                 {
-                    $urlback=DOL_MAIN_URL_ROOT.'/public/paypal/newpayment.php?from=membernewform&source=membersubscription&ref='.$adh->ref;
+                    $urlback=DOL_MAIN_URL_ROOT.'/public/paypal/newpayment.php?from=membernewform&source=membersubscription&ref='.urlencode($adh->ref);
                     if (price2num(GETPOST('amount'))) $urlback.='&amount='.price2num(GETPOST('amount'));
                     if (GETPOST('email')) $urlback.='&email='.urlencode(GETPOST('email'));
-                    if (! empty($conf->global->PAYPAL_SECURITY_TOKEN) && ! empty($conf->global->PAYPAL_SECURITY_TOKEN_UNIQUE))
+                    if (! empty($conf->global->PAYPAL_SECURITY_TOKEN))
                     {
-                    	$urlback.='&securekey='.dol_hash($conf->global->PAYPAL_SECURITY_TOKEN . 'membersubscription' . $adh->ref, 2);
+                        if (! empty($conf->global->PAYPAL_SECURITY_TOKEN_UNIQUE))
+                        {
+                    	   $urlback.='&securekey='.urlencode(dol_hash($conf->global->PAYPAL_SECURITY_TOKEN . 'membersubscription' . $adh->ref, 2));
+                        }
+                        else
+                        {
+                            $urlback.='&securekey='.urlencode($conf->global->PAYPAL_SECURITY_TOKEN);
+                        }
                     }
-                    
+
                 }
                 else
                 {
@@ -494,13 +500,13 @@ if (empty($conf->global->SOCIETE_DISABLE_STATE))
     print '</td></tr>';
 }
 // EMail
-print '<tr><td>'.$langs->trans("Email").' <FONT COLOR="red">*</FONT></td><td><input type="text" name="email" size="40" value="'.dol_escape_htmltag(GETPOST('email')).'"></td></tr>'."\n";
+print '<tr><td>'.$langs->trans("Email").' <FONT COLOR="red">*</FONT></td><td><input type="text" name="email" maxlength="255" size="40" value="'.dol_escape_htmltag(GETPOST('email')).'"></td></tr>'."\n";
 // Login
 if (empty($conf->global->ADHERENT_LOGIN_NOT_REQUIRED))
 {
-    print '<tr><td>'.$langs->trans("Login").' <FONT COLOR="red">*</FONT></td><td><input type="text" name="login" size="20" value="'.dol_escape_htmltag(GETPOST('login')).'"></td></tr>'."\n";
-    print '<tr><td>'.$langs->trans("Password").' <FONT COLOR="red">*</FONT></td><td><input type="password" name="pass1" size="20" value="'.GETPOST("pass1").'"></td></tr>'."\n";
-    print '<tr><td>'.$langs->trans("PasswordAgain").' <FONT COLOR="red">*</FONT></td><td><input type="password" name="pass2" size="20" value="'.GETPOST("pass2").'"></td></tr>'."\n";
+    print '<tr><td>'.$langs->trans("Login").' <FONT COLOR="red">*</FONT></td><td><input type="text" name="login" maxlength="50" size="20" value="'.dol_escape_htmltag(GETPOST('login')).'"></td></tr>'."\n";
+    print '<tr><td>'.$langs->trans("Password").' <FONT COLOR="red">*</FONT></td><td><input type="password" maxlength="128" name="pass1" size="20" value="'.GETPOST("pass1").'"></td></tr>'."\n";
+    print '<tr><td>'.$langs->trans("PasswordAgain").' <FONT COLOR="red">*</FONT></td><td><input type="password" maxlength="128" name="pass2" size="20" value="'.GETPOST("pass2").'"></td></tr>'."\n";
 }
 // Birthday
 print '<tr id="trbirth" class="trbirth"><td>'.$langs->trans("DateToBirth").'</td><td>';
@@ -519,8 +525,8 @@ foreach($extrafields->attribute_label as $key=>$value)
 }
 // Comments
 print '<tr>';
-print '<td valign="top">'.$langs->trans("Comments").'</td>';
-print '<td valign="top"><textarea name="comment" wrap="soft" cols="60" rows="'.ROWS_4.'">'.dol_escape_htmltag(GETPOST('comment')).'</textarea></td>';
+print '<td class="tdtop">'.$langs->trans("Comments").'</td>';
+print '<td class="tdtop"><textarea name="note_private" id="note_private" wrap="soft" class="quatrevingtpercent" rows="'.ROWS_3.'">'.dol_escape_htmltag(GETPOST('note_private')).'</textarea></td>';
 print '</tr>'."\n";
 
 // Add specific fields used by Dolibarr foundation for example

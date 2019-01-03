@@ -63,7 +63,7 @@
 		{
 		    print '<td width="15%" class="fieldrequired">'.$langs->trans("WarehouseSource").'</td>';
 		    print '<td width="15%">';
-		    print $formproduct->selectWarehouses((GETPOST("dwid")?GETPOST("dwid",'int'):(GETPOST('id_entrepot')?GETPOST('id_entrepot','int'):'ifone')),'id_entrepot','',1);
+		    print $formproduct->selectWarehouses((GETPOST("dwid")?GETPOST("dwid",'int'):(GETPOST('id_entrepot')?GETPOST('id_entrepot','int'):'ifone')), 'id_entrepot', 'warehouseopen,warehouseinternal', 1);
 		    print '</td>';
 		}
 		if ($object->element == 'stock')
@@ -75,7 +75,7 @@
 		}
 		
 		print '<td width="15%" class="fieldrequired">'.$langs->trans("WarehouseTarget").'</td><td width="15%">';
-		print $formproduct->selectWarehouses(GETPOST('id_entrepot_destination'),'id_entrepot_destination','',1);
+		print $formproduct->selectWarehouses(GETPOST('id_entrepot_destination'), 'id_entrepot_destination', 'warehouseopen,warehouseinternal', 1);
 		print '</td>';
 		print '<td width="15%" class="fieldrequired">'.$langs->trans("NumberOfUnit").'</td><td width="15%"><input type="text" class="flat" name="nbpiece" size="10" value="'.dol_escape_htmltag(GETPOST("nbpiece")).'"></td>';
 		print '</tr>';
@@ -100,10 +100,10 @@
 			}
 			print '</td>';
 			print '</tr><tr>';
-			print '<td>'.$langs->trans("l_eatby").'</td><td>';
+			print '<td>'.$langs->trans("EatByDate").'</td><td>';
 			print $form->select_date(($d_eatby?$d_eatby:$pdluo->eatby),'eatby','','',1,"", 1, 0, 1, ($pdluoid > 0 ? 1 : 0));		// If form was opened for a specific pdluoid, field is disabled
 			print '</td>';
-			print '<td>'.$langs->trans("l_sellby").'</td><td>';
+			print '<td>'.$langs->trans("SellByDate").'</td><td>';
 			print $form->select_date(($d_sellby?$d_sellby:$pdluo->sellby),'sellby','','',1,"", 1, 0, 1, ($pdluoid > 0 ? 1 : 0));		// If form was opened for a specific pdluoid, field is disabled
 			print '</td>';
 			print '<td colspan="2"></td>';
@@ -117,7 +117,7 @@
 		print '<td colspan="3">';
 		print '<input type="text" name="label" size="60" value="'.dol_escape_htmltag($valformovementlabel).'">';
 		print '</td>';
-		print '<td width="20%">'.$langs->trans("InventoryCode").'</td><td width="20%"><input class="flat" name="inventorycode" id="inventorycode" size="14" value="'.(GETPOST("inventorycode")?GETPOST("inventorycode",'alpha'):dol_print_date(dol_now(),'%y%m%d%H%M%S')).'"></td>';
+		print '<td width="20%">'.$langs->trans("InventoryCode").'</td><td width="20%"><input class="flat maxwidth100onsmartphone" name="inventorycode" id="inventorycode" value="'.(GETPOST("inventorycode")?GETPOST("inventorycode",'alpha'):dol_print_date(dol_now(),'%y%m%d%H%M%S')).'"></td>';
 		print '</tr>';
 
 		print '</table>';

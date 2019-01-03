@@ -37,6 +37,8 @@ class CompanyBankAccount extends Account
 
     var $default_rib;
     var $frstrecur;
+    var $rum;
+    var $date_rum;
 
     var $datec;
     var $datem;
@@ -62,9 +64,10 @@ class CompanyBankAccount extends Account
      * Create bank information record
      *
      * @param   User   $user		User
+     * @param   int    $notrigger   1=Disable triggers
      * @return	int					<0 if KO, >= 0 if OK
      */
-    function create(User $user = null)
+    function create(User $user = null, $notrigger=0)
     {
         $now=dol_now();
 
@@ -99,10 +102,11 @@ class CompanyBankAccount extends Account
     /**
      *	Update bank account
      *
-     *	@param	User	$user	Object user
-     *	@return	int				<=0 if KO, >0 if OK
+     *	@param	User	$user	     Object user
+     *  @param  int     $notrigger   1=Disable triggers
+     *	@return	int				     <=0 if KO, >0 if OK
      */
-    function update(User $user = null)
+    function update(User $user = null, $notrigger = 0)
     {
     	global $conf;
 
@@ -110,6 +114,9 @@ class CompanyBankAccount extends Account
         {
             $this->create();
         }
+		
+		if (dol_strlen($this->domiciliation) > 255) $this->domiciliation = dol_trunc($this->domiciliation, 254, 'right', 'UTF-8', 1);
+		if (dol_strlen($this->owner_address) > 255) $this->owner_address = dol_trunc($this->owner_address, 254, 'right', 'UTF-8', 1);
 
         $sql = "UPDATE ".MAIN_DB_PREFIX."societe_rib SET";
         $sql.= " bank = '" .$this->db->escape($this->bank)."'";
@@ -126,6 +133,8 @@ class CompanyBankAccount extends Account
 	    if ($conf->prelevement->enabled)
 	    {
     	    $sql.= ",frstrecur = '".$this->db->escape($this->frstrecur)."'";
+    	    $sql.= ",rum = '".$this->db->escape($this->rum)."'";
+            $sql.= ",date_rum = ".($this->date_rum ? "'".$this->db->idate($this->date_rum)."'" : "null");
 	    }
 	    if (trim($this->label) != '')
             $sql.= ",label = '".$this->db->escape($this->label)."'";
@@ -168,6 +177,8 @@ class CompanyBankAccount extends Account
             if ($this->db->num_rows($resql))
             {
                 $obj = $this->db->fetch_object($resql);
+
+                $this->ref             = $obj->fk_soc.'-'.$obj->label;      // Generate an artificial ref
 
                 $this->id			   = $obj->rowid;
                 $this->socid           = $obj->fk_soc;
@@ -233,7 +244,7 @@ class CompanyBankAccount extends Account
 	{
 		$rib = '';
 
-		if ($this->code_banque || $this->code_guichet || $this->number || $this->cle_rib) {
+		if ($this->code_banque || $this->code_guichet || $this->number || $this->cle_rib || $this->iban || $this->bic ) {
 
 			if ($this->label && $displayriblabel) {
 				$rib = $this->label." : ";
@@ -299,5 +310,39 @@ class CompanyBankAccount extends Account
     		return -1;
     	}
     }
+    
+    /**
+     *  Initialise an instance with random values.
+     *  Used to build previews or test instances.
+     *	id must be 0 if object instance is a specimen.
+     *
+     *  @return	void
+     */
+    function initAsSpecimen()
+    {
+        $this->specimen        = 1;
+        $this->ref             = 'CBA';
+        $this->label           = 'CustomerCorp Bank account';
+        $this->bank            = 'CustomerCorp Bank';
+        $this->courant         = Account::TYPE_CURRENT;
+        $this->clos            = Account::STATUS_OPEN;
+        $this->code_banque     = '123';
+        $this->code_guichet    = '456';
+        $this->number          = 'CUST12345';
+        $this->cle_rib         = 50;
+        $this->bic             = 'CC12';
+        $this->iban            = 'FR999999999';
+        $this->domiciliation   = 'Bank address of customer corp';
+        $this->proprio         = 'Owner';
+        $this->owner_address   = 'Owner address';
+        $this->country_id      = 1;
+        
+        $this->rum             = 'UMR-CU1212-0007-5-1475405262';
+        $this->date_rum        =dol_now() - 10000;
+        $this->frstrecur       = 'FRST';
+        
+        $this->socid = 0;
+    }
+    
 }
 

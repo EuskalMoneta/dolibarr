@@ -39,7 +39,7 @@ $socid=0;
 if ($user->societe_id > 0)
 	$socid = $user->societe_id;
 
-$sall=GETPOST('sall','alpha');
+$sall=GETPOST('sall', 'alphanohtml');
 $search_user=GETPOST('search_user','alpha');
 
 $userstatic=new User($db);
@@ -153,10 +153,10 @@ print_liste_field_titre('',$_SERVER["PHP_SELF"],"",'','','','','','maxwidthsearc
 print '</tr>';
 
 print '<tr class="liste_titre">';
-print '<td>&nbsp;</td>';
-print '<td>&nbsp;</td>';
+print '<td class="liste_titre">&nbsp;</td>';
+print '<td class="liste_titre">&nbsp;</td>';
 // Status
-print '<td align="right">';
+print '<td class="liste_titre" align="right">';
 print $form->selectarray('search_statut', array('-1'=>'','1'=>$langs->trans('Enabled')),$search_statut);
 print '</td>';
 print '<td class="liste_titre" align="right">';
