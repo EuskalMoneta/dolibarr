@@ -59,6 +59,8 @@ class ModulesTest extends PHPUnit_Framework_TestCase
 	 */
 	function __construct()
 	{
+		parent::__construct();
+
 		//$this->sharedFixture
 		global $conf,$user,$langs,$db;
 		$this->savconf=$conf;
@@ -143,6 +145,11 @@ class ModulesTest extends PHPUnit_Framework_TestCase
             $result=$mod->init();
         	$this->assertLessThan($result, 0, $modlabel);
         	print __METHOD__." test remove/init for module ".$modlabel.", result=".$result."\n";
+        	
+        	if (in_array($modlabel, array('Ldap', 'MailmanSpip')))
+        	{
+        	    $result=$mod->remove();
+        	}
 		}
 
         return 0;

@@ -38,6 +38,8 @@ if (empty($user->id)) {
 }
 $conf->global->MAIN_DISABLE_ALL_MAILS=1;
 
+$conf->global->MAIN_UMASK='0666';
+
 
 /**
  * Class for PHPUnit tests
@@ -61,7 +63,9 @@ class WebservicesOtherTest extends PHPUnit_Framework_TestCase
      */
     function __construct()
     {
-        //$this->sharedFixture
+    	parent::__construct();
+
+    	//$this->sharedFixture
         global $conf,$user,$langs,$db;
         $this->savconf=$conf;
         $this->savuser=$user;

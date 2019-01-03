@@ -61,7 +61,9 @@ class CommandeFournisseurTest extends PHPUnit_Framework_TestCase
      */
     function __construct()
     {
-        //$this->sharedFixture
+    	parent::__construct();
+
+    	//$this->sharedFixture
         global $conf,$user,$langs,$db;
         $this->savconf=$conf;
         $this->savuser=$user;
@@ -264,7 +266,7 @@ class CommandeFournisseurTest extends PHPUnit_Framework_TestCase
      * @param   Object  $localobject        Supplier order
      * @return  void
      *
-     * @depends testCommandeFournisseurValid
+     * @depends testCommandeFournisseurApprove
      * The depends says test is run only if previous is ok
      */
     public function testCommandeFournisseurCancel($localobject)

@@ -1,6 +1,7 @@
 <?php
 /* Copyright (C) 2007-2008 Jeremie Ollivier    <jeremie.o@laposte.net>
  * Copyright (C) 2008-2010 Laurent Destailleur <eldy@uers.sourceforge.net>
+ * Copyright (C) 2018		Juanjo Menent <jmenent@2byte.es>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,11 +29,13 @@ require_once DOL_DOCUMENT_ROOT.'/cashdesk/class/Facturation.class.php';
 require_once DOL_DOCUMENT_ROOT.'/societe/class/societe.class.php';
 require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
 
+$action = GETPOST('action','alpha');
+
 $obj_facturation = unserialize($_SESSION['serObjFacturation']);
 unset ($_SESSION['serObjFacturation']);
 
 
-switch (GETPOST('action','alpha'))
+switch($action)
 {
 	default:
 		if ( $_POST['hdnSource'] != 'NULL' )
@@ -41,7 +44,7 @@ switch (GETPOST('action','alpha'))
 			if (! empty($conf->stock->enabled) && !empty($conf_fkentrepot)) $sql.= ", ps.reel";
 			$sql.= " FROM ".MAIN_DB_PREFIX."product as p";
 			if (! empty($conf->stock->enabled) && !empty($conf_fkentrepot)) $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."product_stock as ps ON p.rowid = ps.fk_product AND ps.fk_entrepot = ".$conf_fkentrepot;
-			$sql.= " WHERE p.entity IN (".getEntity('product', 1).")";
+			$sql.= " WHERE p.entity IN (".getEntity('product').")";
 
 			// Recuperation des donnees en fonction de la source (liste deroulante ou champ texte) ...
 			if ( $_POST['hdnSource'] == 'LISTE' )
@@ -112,10 +115,13 @@ switch (GETPOST('action','alpha'))
 					    {
 					        if (count($prodcustprice->lines) > 0)
 					        {
-					            $pu_ht = price($prodcustprice->lines [0]->price);
-					            $pu_ttc = price($prodcustprice->lines [0]->price_ttc);
-					            $price_base_type = $prodcustprice->lines [0]->price_base_type;
-					            $tva_tx = $prodcustprice->lines [0]->tva_tx;
+					            $pu_ht = price($prodcustprice->lines[0]->price);
+					            $pu_ttc = price($prodcustprice->lines[0]->price_ttc);
+					            $price_base_type = $prodcustprice->lines[0]->price_base_type;
+					            $tva_tx = $prodcustprice->lines[0]->tva_tx;
+					            if ($prodcustprice->lines[0]->default_vat_code && ! preg_match('/\(.*\)/', $tva_tx)) $tva_tx.= ' ('.$prodcustprice->lines[0]->default_vat_code.')';
+					            $tva_npr = $prodcustprice->lines[0]->recuperableonly;
+					            if (empty($tva_tx)) $tva_npr=0;
 					        }
 					    }
 					    else
@@ -145,7 +151,8 @@ switch (GETPOST('action','alpha'))
 					$obj_facturation->id($ret['rowid']);
 					$obj_facturation->ref($ret['ref']);
 					$obj_facturation->stock($ret['reel']);
-					$obj_facturation->prix($ret['price']);
+					//$obj_facturation->prix($ret['price']);
+					$obj_facturation->prix($pu_ht);
 
 
 					$vatrate = $tva_tx;
@@ -188,6 +195,16 @@ switch (GETPOST('action','alpha'))
 		}
 
 		break;
+
+	case 'change_thirdparty':	// We have clicked on button "Modify" a thirdparty
+		$newthirdpartyid = GETPOST('CASHDESK_ID_THIRDPARTY','int');
+		if ($newthirdpartyid > 0)
+		{
+		    $_SESSION["CASHDESK_ID_THIRDPARTY"] = $newthirdpartyid;
+		}
+
+		$redirection = DOL_URL_ROOT.'/cashdesk/affIndex.php?menutpl=facturation';
+        break;
 
 	case 'ajout_article':	// We have clicked on button "Add product"
 

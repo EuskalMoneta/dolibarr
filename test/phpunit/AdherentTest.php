@@ -61,7 +61,9 @@ class AdherentTest extends PHPUnit_Framework_TestCase
      */
     function __construct()
     {
-        //$this->sharedFixture
+    	parent::__construct();
+
+    	//$this->sharedFixture
         global $conf,$user,$langs,$db;
         $this->savconf=$conf;
         $this->savuser=$user;
@@ -79,10 +81,12 @@ class AdherentTest extends PHPUnit_Framework_TestCase
         global $conf,$user,$langs,$db;
         $db->begin(); // This is to have all actions inside a transaction even if test launched without suite.
 
-        if (! empty($conf->global->MAIN_FIRSTNAME_NAME_POSITION)) { 
+        if (! empty($conf->global->MAIN_FIRSTNAME_NAME_POSITION)) {
             print "\n".__METHOD__." Company must be setup to have name-firstname in order 'Firstname Lastname'\n";
             die();
         }
+        if (! empty($conf->global->MAIN_MODULE_LDAP)) { print "\n".__METHOD__." module LDAP must be disabled.\n"; die(); }
+        if (! empty($conf->global->MAIN_MODULE_MAILMANSPIP)) { print "\n".__METHOD__." module MailmanSpip must be disabled.\n"; die(); }
 
         print __METHOD__."\n";
     }
@@ -320,6 +324,7 @@ class AdherentTest extends PHPUnit_Framework_TestCase
                     '%ADDRESS%,%ZIP%,%TOWN%,%COUNTRY%,%EMAIL%,%BIRTH%,%PHOTO%,%LOGIN%,%PASSWORD%,%PRENOM%,'.
                     '%NOM%,%SOCIETE%,%ADDRESS%,%ZIP%,%TOWN%,%COUNTRY%';
 
+        // If option to store clear password has been set, we get 'dolibspec' into PASSWORD field.
         $expected = DOL_MAIN_URL_ROOT.','.$localobject->id.',,New firstname,New name,New firstname New name,'.
                     'New company,New address,New zip,New town,Belgium,newemail@newemail.com,'.dol_print_date($localobject->birth,'day').',,'.
                     'newlogin,dolibspec,New firstname,New name,New company,New address,New zip,New town,Belgium';
@@ -529,7 +534,7 @@ class AdherentTest extends PHPUnit_Framework_TestCase
         $langs=$this->savlangs;
         $db=$this->savdb;
 
-        $result=$localobject->delete($localobject->id);
+        $result=$localobject->delete($localobject->id, $user);
         print __METHOD__." id=".$localobject->id." result=".$result."\n";
         $this->assertLessThan($result, 0);
 

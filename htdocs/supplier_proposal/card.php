@@ -1,6 +1,6 @@
 <?php
 /* Copyright (C) 2001-2007 Rodolphe Quiedeville  <rodolphe@quiedeville.org>
- * Copyright (C) 2004-2016 Laurent Destailleur   <eldy@users.sourceforge.net>
+ * Copyright (C) 2004-2017 Laurent Destailleur   <eldy@users.sourceforge.net>
  * Copyright (C) 2004      Eric Seigne           <eric.seigne@ryxeo.com>
  * Copyright (C) 2005      Marc Barilley / Ocebo <marc@ocebo.com>
  * Copyright (C) 2005-2012 Regis Houssin         <regis.houssin@capnetworks.com>
@@ -97,7 +97,7 @@ if ($id > 0 || ! empty($ref)) {
 		dol_print_error('', $object->error);
 }
 
-// Initialize technical object to manage hooks of thirdparties. Note that conf->hooks_modules contains array array
+// Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
 $hookmanager->initHooks(array('supplier_proposalcard','globalcard'));
 
 $permissionnote = $user->rights->supplier_proposal->creer; // Used by the include of actions_setnotes.inc.php
@@ -173,7 +173,7 @@ if (empty($reshook))
 			$outputlangs = $langs;
 			if (! empty($conf->global->MAIN_MULTILANGS)) {
 				$outputlangs = new Translate("", $conf);
-				$newlang = (GETPOST('lang_id') ? GETPOST('lang_id') : $object->thirdparty->default_lang);
+				$newlang = (GETPOST('lang_id','aZ09') ? GETPOST('lang_id','aZ09') : $object->thirdparty->default_lang);
 				$outputlangs->setDefaultLang($newlang);
 			}
 			$ret = $object->fetch($id); // Reload to get new records
@@ -200,7 +200,7 @@ if (empty($reshook))
 				{
 					$outputlangs = $langs;
 					$newlang = '';
-					if ($conf->global->MAIN_MULTILANGS && empty($newlang) && GETPOST('lang_id')) $newlang = GETPOST('lang_id','alpha');
+					if ($conf->global->MAIN_MULTILANGS && empty($newlang) && GETPOST('lang_id','aZ09')) $newlang = GETPOST('lang_id','aZ09');
 					if ($conf->global->MAIN_MULTILANGS && empty($newlang))	$newlang = $object->thirdparty->default_lang;
 					if (! empty($newlang)) {
 						$outputlangs = new Translate("", $conf);
@@ -261,7 +261,7 @@ if (empty($reshook))
 					$object->modelpdf = GETPOST('model');
 					$object->author = $user->id; // deprecated
 					$object->note = GETPOST('note');
-					$object->statut = 0;
+					$object->statut = SupplierProposal::STATUS_DRAFT;
 
 					$id = $object->create_from($user);
 				} else {
@@ -401,7 +401,7 @@ if (empty($reshook))
 				    	{
 				    		$outputlangs = $langs;
 				    		$newlang = '';
-				    		if ($conf->global->MAIN_MULTILANGS && empty($newlang) && GETPOST('lang_id')) $newlang = GETPOST('lang_id','alpha');
+				    		if ($conf->global->MAIN_MULTILANGS && empty($newlang) && GETPOST('lang_id','aZ09')) $newlang = GETPOST('lang_id','aZ09');
 				    		if ($conf->global->MAIN_MULTILANGS && empty($newlang))	$newlang = $object->thirdparty->default_lang;
 				    		if (! empty($newlang)) {
 				    			$outputlangs = new Translate("", $conf);
@@ -436,16 +436,16 @@ if (empty($reshook))
 	// Reopen proposal
 	else if ($action == 'confirm_reopen' && $user->rights->supplier_proposal->cloturer && ! GETPOST('cancel')) {
 		// prevent browser refresh from reopening proposal several times
-		if ($object->statut == 2 || $object->statut == 3 || $object->statut == 4) {
-			$object->reopen($user, 1);
+		if ($object->statut == SupplierProposal::STATUS_SIGNED || $object->statut == SupplierProposal::STATUS_NOTSIGNED || $object->statut == SupplierProposal::STATUS_CLOSE) {
+			$object->reopen($user, SupplierProposal::STATUS_VALIDATED);
 		}
 	}
 
 	// Close proposal
 	else if ($action == 'close' && $user->rights->supplier_proposal->cloturer && ! GETPOST('cancel')) {
-		// prevent browser refresh from reopening proposal several times
-		if ($object->statut == 2) {
-			$object->setStatut(4);
+	    // prevent browser refresh from reopening proposal several times
+	    if ($object->statut == SupplierProposal::STATUS_SIGNED) {
+			$object->setStatut(SupplierProposal::STATUS_CLOSE);
 		}
 	}
 
@@ -456,28 +456,14 @@ if (empty($reshook))
 			$action = 'statut';
 		} else {
 			// prevent browser refresh from closing proposal several times
-			if ($object->statut == 1) {
+			if ($object->statut == SupplierProposal::STATUS_VALIDATED) {
                 $object->cloture($user, GETPOST('statut'), GETPOST('note'));
 			}
 		}
 	}
 
+	// Action for direct print
 	include DOL_DOCUMENT_ROOT.'/core/actions_printing.inc.php';
-
-
-	/*
-	 * Send mail
-	 */
-
-	// Actions to send emails
-	$actiontypecode='AC_ASKPRICE';
-	$trigger_name='SUPPLIER_PROPOSAL_SENTBYMAIL';
-	$paramname='id';
-	$mode='emailfromsupplierproposal';
-	$trackid='spr'.$object->id;
-	include DOL_DOCUMENT_ROOT.'/core/actions_sendmails.inc.php';
-
-
 
 	// Go back to draft
 	if ($action == 'modif' && $user->rights->supplier_proposal->creer)
@@ -490,7 +476,7 @@ if (empty($reshook))
 			$outputlangs = $langs;
 			if (! empty($conf->global->MAIN_MULTILANGS)) {
 				$outputlangs = new Translate("", $conf);
-				$newlang = (GETPOST('lang_id') ? GETPOST('lang_id') : $object->thirdparty->default_lang);
+				$newlang = (GETPOST('lang_id','aZ09') ? GETPOST('lang_id','aZ09') : $object->thirdparty->default_lang);
 				$outputlangs->setDefaultLang($newlang);
 			}
 			$ret = $object->fetch($id); // Reload to get new records
@@ -700,7 +686,7 @@ if (empty($reshook))
 					{
 						$outputlangs = $langs;
 						$newlang = '';
-			    		if ($conf->global->MAIN_MULTILANGS && empty($newlang) && GETPOST('lang_id')) $newlang = GETPOST('lang_id','alpha');
+			    		if ($conf->global->MAIN_MULTILANGS && empty($newlang) && GETPOST('lang_id','aZ09')) $newlang = GETPOST('lang_id','aZ09');
 	    				if ($conf->global->MAIN_MULTILANGS && empty($newlang))	$newlang = $object->thirdparty->default_lang;
 	    				if (! empty($newlang)) {
 							$outputlangs = new Translate("", $conf);
@@ -835,7 +821,7 @@ if (empty($reshook))
 					$outputlangs = $langs;
 					if (! empty($conf->global->MAIN_MULTILANGS)) {
 						$outputlangs = new Translate("", $conf);
-						$newlang = (GETPOST('lang_id') ? GETPOST('lang_id') : $object->thirdparty->default_lang);
+						$newlang = (GETPOST('lang_id','aZ09') ? GETPOST('lang_id','aZ09') : $object->thirdparty->default_lang);
 						$outputlangs->setDefaultLang($newlang);
 					}
 					$ret = $object->fetch($id); // Reload to get new records
@@ -881,46 +867,20 @@ if (empty($reshook))
 		exit();
 	}
 
-	// Generation doc (depuis lien ou depuis cartouche doc)
-	else if ($action == 'builddoc' && $user->rights->supplier_proposal->creer) {
-		if (GETPOST('model')) {
-			$object->setDocModel($user, GETPOST('model'));
-		}
+	// Actions to send emails
+	$trigger_name='SUPPLIER_PROPOSAL_SENTBYMAIL';
+	$paramname='id';
+	$mode='emailfromsupplierproposal';
+	$trackid='spr'.$object->id;
+	include DOL_DOCUMENT_ROOT.'/core/actions_sendmails.inc.php';
 
-		// Define output language
-		$outputlangs = $langs;
-		if (! empty($conf->global->MAIN_MULTILANGS)) {
-			$outputlangs = new Translate("", $conf);
-			$newlang = (GETPOST('lang_id') ? GETPOST('lang_id') : $object->thirdparty->default_lang);
-			$outputlangs->setDefaultLang($newlang);
-		}
-		$ret = $object->fetch($id); // Reload to get new records
-		$result = $object->generateDocument($object->modelpdf, $outputlangs, $hidedetails, $hidedesc, $hideref);
-		if ($result <= 0)
-		{
-			setEventMessages($object->error, $object->errors, 'errors');
-	        $action='';
-		}
-	}
-
-	// Remove file in doc form
-	else if ($action == 'remove_file' && $user->rights->supplier_proposal->creer) {
-		if ($object->id > 0) {
-			require_once DOL_DOCUMENT_ROOT . '/core/lib/files.lib.php';
-
-			$langs->load("other");
-			$upload_dir = $conf->supplier_proposal->dir_output;
-			$file = $upload_dir . '/' . GETPOST('file');
-			$ret = dol_delete_file($file, 0, 0, 0, $object);
-			if ($ret)
-				setEventMessages($langs->trans("FileWasRemoved", GETPOST('file')), null, 'mesgs');
-			else
-				setEventMessages($langs->trans("ErrorFailToDeleteFile", GETPOST('file')), null, 'errors');
-		}
-	}
+	// Actions to build doc
+	$upload_dir = $conf->supplier_proposal->dir_output;
+	$permissioncreate=$user->rights->supplier_proposal->creer;
+	include DOL_DOCUMENT_ROOT.'/core/actions_builddoc.inc.php';
 
 	// Set project
-	else if ($action == 'classin' && $user->rights->supplier_proposal->creer) {
+	if ($action == 'classin' && $user->rights->supplier_proposal->creer) {
 		$object->setProject($_POST['projectid']);
 	}
 
@@ -961,27 +921,13 @@ if (empty($reshook))
 		// Fill array 'array_options' with data from update form
 		$extralabels = $extrafields->fetch_name_optionals_label($object->table_element);
 		$ret = $extrafields->setOptionalsFromPost($extralabels, $object, GETPOST('attribute'));
-		if ($ret < 0)
-			$error ++;
-
-		if (! $error) {
-			// Actions on extra fields (by external module or standard code)
-			$hookmanager->initHooks(array('supplier_proposaldao'));
-			$parameters = array('id' => $object->id);
-			$reshook = $hookmanager->executeHooks('insertExtraFields', $parameters, $object, $action); // Note that $action and $object may have been
-			                                                                                           // modified by
-			                                                                                           // some hooks
-			if (empty($reshook)) {
-				$result = $object->insertExtraFields();
-				if ($result < 0) {
-					$error ++;
-				}
-			} else if ($reshook < 0)
-				$error ++;
+		if ($ret < 0) $error++;
+		if (! $error)
+		{
+			$result = $object->insertExtraFields();
+			if ($result < 0) $error++;
 		}
-
-		if ($error)
-			$action = 'edit_extras';
+		if ($error) $action = 'edit_extras';
 	}
 }
 
@@ -1004,7 +950,9 @@ $now = dol_now();
 // Add new askprice
 if ($action == 'create')
 {
-	print load_fiche_titre($langs->trans("NewAskPrice"));
+    $currency_code = $conf->currency;
+
+    print load_fiche_titre($langs->trans("NewAskPrice"));
 
 	$soc = new Societe($db);
 	if ($socid > 0)
@@ -1079,7 +1027,7 @@ if ($action == 'create')
 		print '</td>';
 	} else {
 		print '<td colspan="2">';
-		print $form->select_company('', 'socid', 's.fournisseur = 1', 'SelectThirdParty');
+		print $form->select_company('', 'socid', 's.fournisseur = 1', 'SelectThirdParty', 0, 0, null, 0, 'minwidth300');
 		print '</td>';
 	}
 	print '</tr>' . "\n";
@@ -1165,9 +1113,8 @@ if ($action == 'create')
 
 	// Other attributes
 	$parameters = array('colspan' => ' colspan="3"');
-	$reshook = $hookmanager->executeHooks('formObjectOptions', $parameters, $object, $action); // Note that $action and $object may have been modified
-	                                                                                           // by
-	                                                                                           // hook
+	$reshook = $hookmanager->executeHooks('formObjectOptions', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
+    print $hookmanager->resPrint;
 	if (empty($reshook) && ! empty($extrafields->attribute_label)) {
 		print $object->showOptionals($extrafields, 'edit');
 	}
@@ -1240,7 +1187,7 @@ if ($action == 'create')
 		$sql .= ", " . MAIN_DB_PREFIX . "societe s";
 		$sql .= " WHERE s.rowid = p.fk_soc";
 		$sql .= " AND p.entity = " . $conf->entity;
-		$sql .= " AND p.fk_statut <> 0";
+		$sql .= " AND p.fk_statut <> ".SupplierProposal::STATUS_DRAFT;
 		$sql .= " ORDER BY Id";
 
 		$resql = $db->query($sql);
@@ -1299,7 +1246,7 @@ if ($action == 'create')
 	$soc->fetch($object->socid);
 
 	$head = supplier_proposal_prepare_head($object);
-	dol_fiche_head($head, 'comm', $langs->trans('CommRequest'), 0, 'supplier_proposal');
+	dol_fiche_head($head, 'comm', $langs->trans('CommRequest'), -1, 'supplier_proposal');
 
 	$formconfirm = '';
 
@@ -1527,6 +1474,7 @@ if ($action == 'create')
 		print '</td></tr>';
 	}
 
+	/* Not for supplier proposals
 	if ($soc->outstanding_limit)
 	{
 		// Outstanding Bill
@@ -1537,7 +1485,7 @@ if ($action == 'create')
 		print price($soc->outstanding_limit, 0, '', 1, - 1, - 1, $conf->currency);
 		print '</td>';
 		print '</tr>';
-	}
+	}*/
 
 	if (! empty($conf->global->BANK_ASK_PAYMENT_BANK_DURING_PROPOSAL) && ! empty($conf->banque->enabled))
 	{
@@ -1658,7 +1606,7 @@ if ($action == 'create')
 	<input type="hidden" name="id" value="' . $object->id . '">
 	';
 
-	if (! empty($conf->use_javascript_ajax) && $object->statut == 0) {
+	if (! empty($conf->use_javascript_ajax) && $object->statut == SupplierProposal::STATUS_DRAFT) {
 		include DOL_DOCUMENT_ROOT . '/core/tpl/ajaxrow.tpl.php';
 	}
 
@@ -1673,12 +1621,10 @@ if ($action == 'create')
 		$ret = $object->printObjectLines($action, $soc, $mysoc, $lineid, 1);
 
 	// Form to add new line
-	if ($object->statut == 0 && $user->rights->supplier_proposal->creer)
+	if ($object->statut == SupplierProposal::STATUS_DRAFT && $user->rights->supplier_proposal->creer)
 	{
 		if ($action != 'editline')
 		{
-			$var = true;
-
 			// Add products/services form
 			$object->formAddObjectLine(1, $soc, $mysoc);
 
@@ -1735,7 +1681,7 @@ if ($action == 'create')
 			if ($action != 'statut' && $action != 'editline')
 			{
 				// Validate
-				if ($object->statut == 0 && $object->total_ttc >= 0 && count($object->lines) > 0 &&
+				if ($object->statut == SupplierProposal::STATUS_DRAFT && $object->total_ttc >= 0 && count($object->lines) > 0 &&
 			        ((empty($conf->global->MAIN_USE_ADVANCED_PERMS) && ! empty($user->rights->supplier_proposal->creer))
        				|| (! empty($conf->global->MAIN_USE_ADVANCED_PERMS) && ! empty($user->rights->supplier_proposal->validate_advance)))
 				) {
@@ -1745,39 +1691,39 @@ if ($action == 'create')
 				}
 
 				// Edit
-				if ($object->statut == 1 && $user->rights->supplier_proposal->creer) {
+				if ($object->statut == SupplierProposal::STATUS_VALIDATED && $user->rights->supplier_proposal->creer) {
 					print '<div class="inline-block divButAction"><a class="butAction" href="' . $_SERVER["PHP_SELF"] . '?id=' . $object->id . '&amp;action=modif">' . $langs->trans('Modify') . '</a></div>';
 				}
 
 				// ReOpen
-				if (($object->statut == 2 || $object->statut == 3 || $object->statut == 4) && $user->rights->supplier_proposal->cloturer) {
+				if (($object->statut == SupplierProposal::STATUS_SIGNED || $object->statut == SupplierProposal::STATUS_NOTSIGNED || $object->statut == SupplierProposal::STATUS_CLOSE) && $user->rights->supplier_proposal->cloturer) {
 					print '<div class="inline-block divButAction"><a class="butAction" href="' . $_SERVER["PHP_SELF"] . '?id=' . $object->id . '&amp;action=reopen' . (empty($conf->global->MAIN_JUMP_TAG) ? '' : '#reopen') . '"';
 					print '>' . $langs->trans('ReOpen') . '</a></div>';
 				}
 
 				// Send
-				if ($object->statut == 1 || $object->statut == 2) {
+				if ($object->statut == SupplierProposal::STATUS_VALIDATED || $object->statut == SupplierProposal::STATUS_SIGNED) {
 					if (empty($conf->global->MAIN_USE_ADVANCED_PERMS) || $user->rights->supplier_proposal->send_advance) {
-						print '<div class="inline-block divButAction"><a class="butAction" href="' . $_SERVER["PHP_SELF"] . '?id=' . $object->id . '&amp;action=presend&amp;mode=init">' . $langs->trans('SendByMail') . '</a></div>';
+						print '<div class="inline-block divButAction"><a class="butAction" href="' . $_SERVER["PHP_SELF"] . '?id=' . $object->id . '&action=presend&mode=init#formmailbeforetitle">' . $langs->trans('SendByMail') . '</a></div>';
 					} else
 						print '<div class="inline-block divButAction"><a class="butActionRefused" href="#">' . $langs->trans('SendByMail') . '</a></div>';
 				}
 
 				// Create an order
-				if (! empty($conf->commande->enabled) && $object->statut == 2) {
+				if (! empty($conf->commande->enabled) && $object->statut == SupplierProposal::STATUS_SIGNED) {
 					if ($user->rights->fournisseur->commande->creer) {
 						print '<div class="inline-block divButAction"><a class="butAction" href="' . DOL_URL_ROOT . '/fourn/commande/card.php?action=create&amp;origin=' . $object->element . '&amp;originid=' . $object->id . '&amp;socid=' . $object->socid . '">' . $langs->trans("AddOrder") . '</a></div>';
 					}
 				}
 
 				// Set accepted/refused
-				if ($object->statut == 1 && $user->rights->supplier_proposal->cloturer) {
+				if ($object->statut == SupplierProposal::STATUS_VALIDATED && $user->rights->supplier_proposal->cloturer) {
 					print '<div class="inline-block divButAction"><a class="butAction" href="' . $_SERVER["PHP_SELF"] . '?id=' . $object->id . '&amp;action=statut' . (empty($conf->global->MAIN_JUMP_TAG) ? '' : '#acceptedrefused') . '"';
 					print '>' . $langs->trans('SetAcceptedRefused') . '</a></div>';
 				}
 
 				// Close
-				if ($object->statut == 2 && $user->rights->supplier_proposal->cloturer) {
+				if ($object->statut == SupplierProposal::STATUS_SIGNED && $user->rights->supplier_proposal->cloturer) {
 				    print '<div class="inline-block divButAction"><a class="butAction" href="' . $_SERVER["PHP_SELF"] . '?id=' . $object->id . '&amp;action=close' . (empty($conf->global->MAIN_JUMP_TAG) ? '' : '#close') . '"';
 				    print '>' . $langs->trans('Close') . '</a></div>';
 				}
@@ -1788,7 +1734,7 @@ if ($action == 'create')
 				}
 
 				// Delete
-				if (($object->statut == 0 && $user->rights->supplier_proposal->creer) || $user->rights->supplier_proposal->supprimer) {
+				if (($object->statut == SupplierProposal::STATUS_DRAFT && $user->rights->supplier_proposal->creer) || $user->rights->supplier_proposal->supprimer) {
 					print '<div class="inline-block divButAction"><a class="butActionDelete" href="' . $_SERVER["PHP_SELF"] . '?id=' . $object->id . '&amp;action=delete"';
 					print '>' . $langs->trans('Delete') . '</a></div>';
 				}
@@ -1797,7 +1743,6 @@ if ($action == 'create')
 
 		print '</div>';
 	}
-	print "<br>\n";
 
 	if ($action != 'presend')
 	{
@@ -1809,10 +1754,8 @@ if ($action == 'create')
 		$filename = dol_sanitizeFileName($object->ref);
 		$filedir = $conf->supplier_proposal->dir_output . "/" . dol_sanitizeFileName($object->ref);
 		$urlsource = $_SERVER["PHP_SELF"] . "?id=" . $object->id;
-		$genallowed = $user->rights->supplier_proposal->creer;
-		$delallowed = $user->rights->supplier_proposal->supprimer;
-
-		$var = true;
+		$genallowed = $user->rights->supplier_proposal->lire;
+		$delallowed = $user->rights->supplier_proposal->creer;
 
 		print $formfile->showdocuments('supplier_proposal', $filename, $filedir, $urlsource, $genallowed, $delallowed, $object->modelpdf, 1, 0, 0, 28, 0, '', 0, '', $soc->default_lang);
 
@@ -1860,6 +1803,7 @@ if ($action == 'create')
 			$outputlangs = new Translate('', $conf);
 			$outputlangs->setDefaultLang($newlang);
 			$outputlangs->load('commercial');
+			$outputlangs->load('supplier_proposal');
 		}
 
 		// Build document if it not exists
@@ -1874,6 +1818,7 @@ if ($action == 'create')
 			$file = $fileparams['fullname'];
 		}
 
+		print '<div id="formmailbeforetitle" name="formmailbeforetitle"></div>';
 		print '<div class="clearboth"></div>';
 		print '<br>';
 		print load_fiche_titre($langs->trans('SendAskByMail'));

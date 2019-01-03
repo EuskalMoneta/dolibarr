@@ -39,7 +39,7 @@ class FactureStats extends Stats
     var $from;
     var $field;
     var $where;
-	
+
 
 	/**
      * 	Constructor
@@ -56,8 +56,8 @@ class FactureStats extends Stats
 		$this->db = $db;
         $this->socid = ($socid > 0 ? $socid : 0);
         $this->userid = $userid;
-		$this->cachefilesuffix = $mode; 
-		
+		$this->cachefilesuffix = $mode;
+
 		if ($mode == 'customer')
 		{
 			$object=new Facture($this->db);
@@ -84,8 +84,8 @@ class FactureStats extends Stats
 			$this->where.=" AND f.fk_soc = ".$this->socid;
 		}
         if ($this->userid > 0) $this->where.=' AND f.fk_user_author = '.$this->userid;
-		if (! empty($conf->global->FACTURE_DEPOSITS_ARE_JUST_PAYMENTS)) $this->where.= " AND f.type IN (0,1,2)";
-		else $this->where.= " AND f.type IN (0,1,2,3)";
+		if (! empty($conf->global->FACTURE_DEPOSITS_ARE_JUST_PAYMENTS)) $this->where.= " AND f.type IN (0,1,2,5)";
+		else $this->where.= " AND f.type IN (0,1,2,3,5)";
 	}
 
 
@@ -195,7 +195,7 @@ class FactureStats extends Stats
 
 		return $this->_getAllByYear($sql);
 	}
-	
+
 	/**
 	 *	Return nb, amount of predefined product for year
 	 *
@@ -218,7 +218,7 @@ class FactureStats extends Stats
 
 		return $this->_getAllByProduct($sql);
 	}
-	
-	
+
+
 }
 
