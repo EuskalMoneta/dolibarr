@@ -1170,6 +1170,8 @@ class doc_generic_project_odt extends ModelePDFProjects
 
 				$odfHandler=null;	// Destroy object
 
+				$this->result = array('fullpath'=>$file);
+				
 				return 1;   // Success
 			}
 			else

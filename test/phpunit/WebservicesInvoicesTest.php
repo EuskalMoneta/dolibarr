@@ -116,6 +116,8 @@ class WebservicesInvoicesTest extends PHPUnit_Framework_TestCase
 		$societe->ref_ext='ref-phpunit';
 		$societe->status=1;
 		$societe->client=1;
+		$societe->code_client='CU0901-1234';
+		$societe->code_fournisseur='SU0901-1234';
 		$societe->fournisseur=0;
 		$societe->date_creation=$now;
 		$societe->tva_assuj=0;

@@ -170,8 +170,8 @@ class WebservicesThirdpartyTest extends PHPUnit_Framework_TestCase
     			"status" => NULL,
     			"client" => 1,
     			"supplier" => 0,
-    			"customer_code" => "",
-    			"supplier_code" => "",
+    			"customer_code" => "CU0901-5678",
+    			"supplier_code" => "SU0901-5678",
     			"customer_code_accountancy" => "",
     			"supplier_code_accountancy" => "",
     			"date_creation" => "", // dateTime

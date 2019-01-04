@@ -145,13 +145,18 @@ if (empty($outputalsopricetotalwithtax)) $outputalsopricetotalwithtax=0;
 	}
 	?>
 	</td>
-	<?php if ($object->element == 'supplier_proposal') { ?>
-		<td class="linecolrefsupplier" align="right"><?php echo $line->ref_fourn; ?></td>
-	<?php }
+	<?php
+	if ($object->element == 'supplier_proposal' || $object->element == 'order_supplier' || $object->element == 'invoice_supplier')	// We must have same test in printObjectLines
+	{
+	?>
+		<td class="linecolrefsupplier"><?php
+		echo ($line->ref_fourn?$line->ref_fourn:$line->ref_supplier);
+		?></td>
+	<?php
+	}
 	// VAT Rate
 	?>
 	<td align="right" class="linecolvat nowrap"><?php $coldisplay++; ?><?php
-	//var_dump($line);
 	$positiverates='';
 	if (price2num($line->tva_tx))          $positiverates.=($positiverates?'/':'').price2num($line->tva_tx);
 	if (price2num($line->total_localtax1)) $positiverates.=($positiverates?'/':'').price2num($line->localtax1_tx);
@@ -228,13 +233,13 @@ if (empty($outputalsopricetotalwithtax)) $outputalsopricetotalwithtax=0;
 	<?php if ($line->special_code == 3)	{ ?>
 	<td align="right" class="linecoloption nowrap"><?php $coldisplay++; ?><?php echo $langs->trans('Option'); ?></td>
 	<?php } else { ?>
-	<td align="right" class="liencolht nowrap"><?php $coldisplay++; ?><?php echo price($line->total_ht); ?></td>
+	<td align="right" class="linecolht nowrap"><?php $coldisplay++; ?><?php echo price($line->total_ht); ?></td>
 		<?php if (!empty($conf->multicurrency->enabled)) { ?>
 		<td align="right" class="linecolutotalht_currency nowrap"><?php $coldisplay++; ?><?php echo price($line->multicurrency_total_ht); ?></td>
 		<?php } ?>
 	<?php } ?>
         <?php if ($outputalsopricetotalwithtax) { ?>
-        <td align="right" class="liencolht nowrap"><?php $coldisplay++; ?><?php echo price($line->total_ttc); ?></td>
+        <td align="right" class="linecolht nowrap"><?php $coldisplay++; ?><?php echo price($line->total_ttc); ?></td>
         <?php } ?>
 
 
@@ -280,13 +285,14 @@ if (empty($outputalsopricetotalwithtax)) $outputalsopricetotalwithtax=0;
 	<td colspan="3"><?php $coldisplay=$coldisplay+3; ?></td>
 <?php } ?>
 
+</tr>
+
 <?php
 //Line extrafield
 if (!empty($extrafieldsline))
 {
-	print $line->showOptionals($extrafieldsline,'view',array('style'=>$bcdd[$var],'colspan'=>$coldisplay));
+	print $line->showOptionals($extrafieldsline, 'view', array('style'=>$bcdd[$var],'colspan'=>$coldisplay), '', '', empty($conf->global->MAIN_EXTRAFIELDS_IN_ONE_TD)?0:1);
 }
 ?>
 
-</tr>
 <!-- END PHP TEMPLATE objectline_view.tpl.php -->

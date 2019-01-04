@@ -454,7 +454,10 @@ class Validator implements iValidate
             }
 
             if (isset ($info->choice)) {
-                if (is_array($input)) {
+                if (!$info->required && empty($input)) {
+                    //since its optional, and empty let it pass.
+                    $input = null;
+                } elseif (is_array($input)) {
                     foreach ($input as $i) {
                         if (!in_array($i, $info->choice)) {
                             $error .= ". Expected one of (" . implode(',', $info->choice) . ").";

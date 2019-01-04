@@ -42,9 +42,9 @@ $result=restrictedArea($user,'produit|service');
 $action=GETPOST('action','alpha');
 $sref=GETPOST("sref");
 $snom=GETPOST("snom");
-$sall=GETPOST('sall', 'alphanohtml');
+$sall=trim((GETPOST('search_all', 'alphanohtml')!='')?GETPOST('search_all', 'alphanohtml'):GETPOST('sall', 'alphanohtml'));
 $type=GETPOST("type","int");
-$sbarcode=GETPOST("sbarcode");
+$search_barcode=GETPOST("search_barcode");
 $catid=GETPOST('catid','int');
 $toolowstock=GETPOST('toolowstock');
 $tosell = GETPOST("tosell");
@@ -135,7 +135,7 @@ if (dol_strlen($type))
     }
 }
 if ($sref)     $sql.= natural_search('p.ref', $sref);
-if ($sbarcode) $sql.= natural_search('p.barcode', $sbarcode);
+if ($search_barcode) $sql.= natural_search('p.barcode', $search_barcode);
 if ($snom)     $sql.= natural_search('p.label', $snom);
 if (! empty($tosell)) $sql.= " AND p.tosell = ".$tosell;
 if (! empty($tobuy)) $sql.= " AND p.tobuy = ".$tobuy;
@@ -242,6 +242,8 @@ if ($resql)
 	if ($fourn_id)	$param.="&fourn_id=".$fourn_id;
 	if ($snom)		$param.="&snom=".$snom;
 	if ($sref)		$param.="&sref=".$sref;
+	if ($toolowstock)		$param.="&toolowstock=".$toolowstock;
+	if ($search_categ)		$param.="&search_categ=".$search_categ;
 
 	$formProduct = new FormProduct($db);
 	$formProduct->loadWarehouses();
@@ -336,7 +338,7 @@ if ($resql)
 		// Real stock
 		print '<td align="right">';
         if ($objp->seuil_stock_alerte != '' && ($objp->stock_physique < $objp->seuil_stock_alerte)) print img_warning($langs->trans("StockTooLow")).' ';
-		print $objp->stock_physique;
+		print $objp->stock_physique|0;
 		print '</td>';
 
 		// Details per warehouse

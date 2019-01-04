@@ -33,22 +33,24 @@ global $conf;
 //use \includes\stripe as stripe;
 $stripe = array();
 
-if (empty($conf->global->STRIPE_LIVE))
+if (empty($conf->global->STRIPE_LIVE) || GETPOST('forcesandbox','alpha'))
 {
 	$stripe = array(
 		"secret_key"      => $conf->global->STRIPE_TEST_SECRET_KEY,
 		"publishable_key" => $conf->global->STRIPE_TEST_PUBLISHABLE_KEY
 	);
 }
-else 
+else
 {
 	$stripe = array(
 		"secret_key"      => $conf->global->STRIPE_LIVE_SECRET_KEY,
 		"publishable_key" => $conf->global->STRIPE_LIVE_PUBLISHABLE_KEY
-	);	
+	);
 }
 
 require_once DOL_DOCUMENT_ROOT."/includes/stripe/lib/Stripe.php";
 require_once DOL_DOCUMENT_ROOT.'/core/lib/payments.lib.php';
 
 \Stripe\Stripe::setApiKey($stripe['secret_key']);
+\Stripe\Stripe::setAppInfo("Stripe", DOL_VERSION, "https://www.dolibarr.org"); // add dolibarr version
+\Stripe\Stripe::setApiVersion("2018-07-27"); // force version API

@@ -168,6 +168,7 @@ if ($object->fournisseur)
 	$thirdTypeArray['supplier']=$langs->trans("supplier");
 	if ($conf->fournisseur->enabled && $user->rights->fournisseur->facture->lire) $elementTypeArray['supplier_invoice']=$langs->transnoentitiesnoconv('SuppliersInvoices');
 	if ($conf->fournisseur->enabled && $user->rights->fournisseur->commande->lire) $elementTypeArray['supplier_order']=$langs->transnoentitiesnoconv('SuppliersOrders');
+	if ($conf->fournisseur->enabled && $user->rights->supplier_proposal->lire) $elementTypeArray['supplier_proposal']=$langs->transnoentitiesnoconv('SupplierProposals');
 }
 print '</table>';
 
@@ -254,6 +255,19 @@ if ($type_element == 'supplier_invoice')
 	$doc_number='f.ref';
 	$thirdTypeSelect='supplier';
 }
+if ($type_element == 'supplier_proposal')
+{
+    require_once DOL_DOCUMENT_ROOT.'/supplier_proposal/class/supplier_proposal.class.php';
+    $documentstatic=new SupplierProposal($db);
+    $sql_select = 'SELECT c.rowid as doc_id, c.ref as doc_number, \'1\' as doc_type, c.date_valid as dateprint, c.fk_statut as status, ';
+    $tables_from = MAIN_DB_PREFIX."supplier_proposal as c,".MAIN_DB_PREFIX."supplier_proposaldet as d";
+    $where = " WHERE c.fk_soc = s.rowid AND s.rowid = ".$socid;
+    $where.= " AND d.fk_supplier_proposal = c.rowid";
+    $where.= " AND c.entity = ".$conf->entity;
+    $dateprint = 'c.date_valid';
+    $doc_number='c.ref';
+    $thirdTypeSelect='supplier';
+}
 if ($type_element == 'supplier_order')
 { 	// Supplier : Show products from orders.
 	require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.commande.class.php';
@@ -282,11 +296,15 @@ if ($type_element == 'contract')
 	$thirdTypeSelect='customer';
 }
 
+$parameters=array();
+$reshook=$hookmanager->executeHooks('printFieldListSelect',$parameters);    // Note that $action and $object may have been modified by hook
+
 if (!empty($sql_select))
 {
 	$sql = $sql_select;
 	$sql.= ' d.description as description,';
-	if ($type_element != 'fichinter' && $type_element != 'contract') $sql.= ' d.label, d.fk_product as product_id, d.fk_product as fk_product, d.info_bits, d.date_start, d.date_end, d.qty, d.qty as prod_qty, d.total_ht as total_ht, ';
+	if ($type_element != 'fichinter' && $type_element != 'contract' && $type_element != 'supplier_proposal') $sql.= ' d.label, d.fk_product as product_id, d.fk_product as fk_product, d.info_bits, d.date_start, d.date_end, d.qty, d.qty as prod_qty, d.total_ht as total_ht, ';
+	if ($type_element == 'supplier_proposal') $sql.= ' d.label, d.fk_product as product_id, d.fk_product as fk_product, d.info_bits, d.qty, d.qty as prod_qty, d.total_ht as total_ht, ';
 	if ($type_element == 'contract') $sql.= ' d.label, d.fk_product as product_id, d.fk_product as fk_product, d.info_bits, d.date_ouverture as date_start, d.date_cloture as date_end, d.qty, d.qty as prod_qty, d.total_ht as total_ht, ';
 	if ($type_element != 'fichinter') $sql.= ' p.ref as ref, p.rowid as prod_id, p.rowid as fk_product, p.fk_product_type as prod_type, p.fk_product_type as fk_product_type, p.entity as pentity,';
 	$sql.= " s.rowid as socid ";
@@ -333,9 +351,16 @@ if (empty($elementTypeArray) && ! $object->client && ! $object->fournisseur)
 }
 
 // Define type of elements
-$typeElementString = $form->selectarray("type_element", $elementTypeArray, GETPOST('type_element'), $showempty, 0, 0, '', 0, 0, $disabled);
+$typeElementString = $form->selectarray("type_element", $elementTypeArray, GETPOST('type_element'), $showempty, 0, 0, '', 0, 0, $disabled, '', 'maxwidth150onsmartphone');
 $button = '<input type="submit" class="button" name="button_third" value="'.dol_escape_htmltag($langs->trans("Search")).'" title="'.dol_escape_htmltag($langs->trans("Search")).'">';
-$param="&amp;sref=".$sref."&amp;month=".$month."&amp;year=".$year."&amp;sprod_fulldescr=".$sprod_fulldescr."&amp;socid=".$socid."&amp;type_element=".$type_element;
+
+$param='';
+$param.="&sref=".urlencode($sref);
+$param.="&month=".urlencode($month);
+$param.="&year=".urlencode($year);
+$param.="&sprod_fulldescr=".urlencode($sprod_fulldescr);
+$param.="&socid=".urlencode($socid);
+$param.="&type_element=".urlencode($type_element);
 
 $total_qty=0;
 
@@ -358,6 +383,7 @@ if ($sql_select)
 
     print_barre_liste($langs->trans('ProductsIntoElements').' '.$typeElementString.' '.$button, $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder,'',$num, $totalnboflines, '', 0, '', '', $limit);
 
+    print '<div class="div-table-responsive-no-min">';
     print '<table class="liste" width="100%">'."\n";
 
     // Filters
@@ -592,6 +618,7 @@ if ($sql_select)
 	print '<td align="right">' . price($total_ht) . '</td>';
 	print '<td align="right">' . price($total_ht/(empty($total_qty)?1:$total_qty)) . '</td>';
 	print "</table>";
+	print '</div>';
 
 	if ($num > $limit) {
 		print_barre_liste('', $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder,'',$num);

@@ -81,20 +81,21 @@ $offset = $conf->liste_limit * $page;
 $pageprev = $page - 1;
 $pagenext = $page + 1;
 if (! $sortorder) $sortorder="ASC";
-if (! $sortfield) $sortfield="name";
+if (! $sortfield) $sortfield="position_name";
 
 $object = new User($db);
 if ($id > 0 || ! empty($ref))
 {
 	$result = $object->fetch($id, $ref, '', 1);
 	$object->getrights();
-	$entitytouseforuserdir = $object->entity;
-	if (empty($entitytouseforuserdir)) $entitytouseforuserdir=1;
-	$upload_dir = $conf->user->multidir_output[$entitytouseforuserdir] . "/" . $object->id ;
+	//$upload_dir = $conf->user->multidir_output[$object->entity] . "/" . $object->id ;
+	// For users, the upload_dir is always $conf->user->entity for the moment
+	$upload_dir = $conf->user->dir_output. "/" . $object->id ;
 }
 
 // Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
-$hookmanager->initHooks(array('usercard','globalcard'));
+$contextpage=array('usercard','userdoc','globalcard');
+$hookmanager->initHooks($contextpage);
 
 
 /*
@@ -135,7 +136,7 @@ if ($object->id)
 	if ($user->rights->user->user->lire || $user->admin) {
 		$linkback = '<a href="'.DOL_URL_ROOT.'/user/index.php">'.$langs->trans("BackToList").'</a>';
 	}
-	
+
     dol_banner_tab($object,'id',$linkback,$user->rights->user->user->lire || $user->admin);
 
     print '<div class="fichecenter">';
@@ -163,7 +164,7 @@ if ($object->id)
 
 	print '</table>';
     print '</div>';
-    
+
 	dol_fiche_end();
 
 

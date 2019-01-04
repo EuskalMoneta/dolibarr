@@ -43,6 +43,7 @@ $mine   = GETPOST('mode')=='mine' ? 1 : 0;
 $object = new Project($db);
 
 include DOL_DOCUMENT_ROOT.'/core/actions_fetchobject.inc.php';  // Must be include, not include_once
+if(! empty($conf->global->PROJECT_ALLOW_COMMENT_ON_PROJECT) && method_exists($object, 'fetchComments') && empty($object->comments)) $object->fetchComments();
 
 // Security check
 $socid=0;
@@ -140,6 +141,7 @@ $userstatic=new User($db);
 
 if ($id > 0 || ! empty($ref))
 {
+	if(! empty($conf->global->PROJECT_ALLOW_COMMENT_ON_PROJECT) && method_exists($object, 'fetchComments') && empty($object->comments)) $object->fetchComments();
 	// To verify role of users
 	//$userAccess = $object->restrictedProjectArea($user,'read');
 	$userWrite  = $object->restrictedProjectArea($user,'write');
@@ -207,9 +209,9 @@ if ($id > 0 || ! empty($ref))
 
     // Date start - end
     print '<tr><td>'.$langs->trans("DateStart").' - '.$langs->trans("DateEnd").'</td><td>';
-	$start = dol_print_date($object->date_start,'dayhour');
+	$start = dol_print_date($object->date_start,'day');
 	print ($start?$start:'?');
-	$end = dol_print_date($object->date_end,'dayhour');
+	$end = dol_print_date($object->date_end,'day');
 	print ' - ';
 	print ($end?$end:'?');
 	if ($object->hasDelay()) print img_warning("Late");
