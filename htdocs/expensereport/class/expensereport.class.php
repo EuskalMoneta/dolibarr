@@ -1,8 +1,9 @@
 <?php
-/* Copyright (C) 2011 Dimitri Mouillard   <dmouillard@teclib.com>
- * Copyright (C) 2015 Laurent Destailleur <eldy@users.sourceforge.net>
- * Copyright (C) 2015 Alexandre Spangaro  <aspangaro@zendsi.com>
- * Copyright (C) 2016 Ferran Marcet       <fmarcet@2byte.es>
+/* Copyright (C) 2011 		Dimitri Mouillard   	<dmouillard@teclib.com>
+ * Copyright (C) 2015 		Laurent Destailleur 	<eldy@users.sourceforge.net>
+ * Copyright (C) 2015 		Alexandre Spangaro  	<aspangaro@zendsi.com>
+ * Copyright (C) 2018       Nicolas ZABOURI         <info@inovea-conseil.com>
+ * Copyright (C) 2016-2018 	Ferran Marcet       	<fmarcet@2byte.es>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -138,7 +139,7 @@ class ExpenseReport extends CommonObject
         // List of language codes for status
         $this->statuts_short = array(0 => 'Draft', 2 => 'Validated', 4 => 'Canceled', 5 => 'Approved', 6 => 'Paid', 99 => 'Refused');
         $this->statuts = array(0 => 'Draft', 2 => 'ValidatedWaitingApproval', 4 => 'Canceled', 5 => 'Approved', 6 => 'Paid', 99 => 'Refused');
-        $this->statuts_logo = array(0 => 'statut0', 2 => 'statut1', 4 => 'statut5', 5 => 'statut3', 6 => 'statut6', 99 => 'statut8');
+        $this->statuts_logo = array(0 => 'statut0', 2 => 'statut1', 4 => 'statut5', 5 => 'statut3', 6 => 'statut6', 99 => 'statut5');
 
         return 1;
     }
@@ -344,11 +345,6 @@ class ExpenseReport extends CommonObject
                 $reshook=$hookmanager->executeHooks('createFrom',$parameters,$this,$action);    // Note that $action and $object may have been modified by some hooks
                 if ($reshook < 0) $error++;
             }
-
-            // Call trigger
-            $result=$this->call_trigger('EXPENSEREPORT_CLONE',$user);
-            if ($result < 0) $error++;
-            // End call triggers
         }
 
         unset($this->context['createfromclone']);
@@ -456,10 +452,10 @@ class ExpenseReport extends CommonObject
         $sql.= " d.date_debut, d.date_fin, d.date_create, d.tms as date_modif, d.date_valid, d.date_approve,";	// DATES (datetime)
         $sql.= " d.fk_user_author, d.fk_user_modif, d.fk_user_validator,";
         $sql.= " d.fk_user_valid, d.fk_user_approve,";
-        $sql.= " d.fk_statut as status, d.fk_c_paiement,";
+        $sql.= " d.fk_statut as status, d.fk_c_paiement, d.paid,";
         $sql.= " dp.libelle as libelle_paiement, dp.code as code_paiement";                             // INNER JOIN paiement
         $sql.= " FROM ".MAIN_DB_PREFIX.$this->table_element." as d";
-        $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."c_paiement as dp ON d.fk_c_paiement = dp.id AND dp.entity IN (".getEntity('c_paiement').")";
+        $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."c_paiement as dp ON d.fk_c_paiement = dp.id";
         if ($ref) $sql.= " WHERE d.ref = '".$this->db->escape($ref)."'";
         else $sql.= " WHERE d.rowid = ".$id;
         //$sql.= $restrict;
@@ -1674,27 +1670,32 @@ class ExpenseReport extends CommonObject
 	 */
 	function addline($qty=0, $up=0, $fk_c_type_fees=0, $vatrate=0, $date='', $comments='', $fk_project=0, $fk_c_exp_tax_cat=0, $type=0)
 	{
-		global $conf,$langs;
+		global $conf,$langs,$mysoc;
 
         dol_syslog(get_class($this)."::addline qty=$qty, up=$up, fk_c_type_fees=$fk_c_type_fees, vatrate=$vatrate, date=$date, fk_project=$fk_project, type=$type, comments=$comments", LOG_DEBUG);
 
-		if (empty($qty)) $qty = 0;
-		if (empty($fk_c_type_fees) || $fk_c_type_fees < 0) $fk_c_type_fees = 0;
-		if (empty($fk_c_exp_tax_cat) || $fk_c_exp_tax_cat < 0) $fk_c_exp_tax_cat = 0;
-		if (empty($vatrate) || $vatrate < 0) $vatrate = 0;
-		if (empty($date)) $date = '';
-		if (empty($fk_project)) $fk_project = 0;
-
-		$qty = price2num($qty);
-		$vatrate = price2num($vatrate);
-		$up = price2num($up);
-
 		if ($this->fk_statut == self::STATUS_DRAFT)
-        {
+		{
+			if (empty($qty)) $qty = 0;
+			if (empty($fk_c_type_fees) || $fk_c_type_fees < 0) $fk_c_type_fees = 0;
+			if (empty($fk_c_exp_tax_cat) || $fk_c_exp_tax_cat < 0) $fk_c_exp_tax_cat = 0;
+			if (empty($vatrate) || $vatrate < 0) $vatrate = 0;
+			if (empty($date)) $date = '';
+			if (empty($fk_project)) $fk_project = 0;
+
+			$qty = price2num($qty);
+			if (!preg_match('/\((.*)\)/', $vatrate)) {
+				$vatrate = price2num($vatrate);               // $txtva can have format '5.0(XXX)' or '5'
+			}
+			$up = price2num($up);
+
 			$this->db->begin();
 
 			$this->line = new ExpenseReportLine($this->db);
 
+			$localtaxes_type=getLocalTaxesFromRate($vatrate,0,$mysoc,$this->thirdparty);
+
+			$vat_src_code = '';
 			if (preg_match('/\((.*)\)/', $vatrate, $reg))
 			{
 				$vat_src_code = $reg[1];
@@ -1703,7 +1704,8 @@ class ExpenseReport extends CommonObject
 			$vatrate = preg_replace('/\*/','',$vatrate);
 
 			$seller = '';  // seller is unknown
-			$tmp = calcul_price_total($qty, $up, 0, $vatrate, 0, 0, 0, 'TTC', 0, $type, $seller);
+
+			$tmp = calcul_price_total($qty, $up, 0, $vatrate, 0, 0, 0, 'TTC', 0, $type, $seller, $localtaxes_type);
 
 			$this->line->value_unit = $up;
 			$this->line->vatrate = price2num($vatrate);
@@ -2151,9 +2153,10 @@ class ExpenseReport extends CommonObject
      *  @param      int         $hidedetails    Hide details of lines
      *  @param      int         $hidedesc       Hide description
      *  @param      int         $hideref        Hide ref
+     *  @param   null|array  $moreparams     Array to provide more information
      *  @return     int                         0 if KO, 1 if OK
      */
-    public function generateDocument($modele, $outputlangs, $hidedetails=0, $hidedesc=0, $hideref=0)
+    public function generateDocument($modele, $outputlangs, $hidedetails=0, $hidedesc=0, $hideref=0, $moreparams=null)
     {
         global $conf,$langs;
 
@@ -2172,7 +2175,7 @@ class ExpenseReport extends CommonObject
 
         $modelpath = "core/modules/expensereport/doc/";
 
-        return $this->commonGenerateDocument($modelpath, $modele, $outputlangs, $hidedetails, $hidedesc, $hideref);
+        return $this->commonGenerateDocument($modelpath, $modele, $outputlangs, $hidedetails, $hidedesc, $hideref,$moreparams);
     }
 
     /**

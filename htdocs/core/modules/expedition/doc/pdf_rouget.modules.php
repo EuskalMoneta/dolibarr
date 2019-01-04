@@ -3,6 +3,7 @@
  * Copyright (C) 2005-2012 Laurent Destailleur	<eldy@users.sourceforge.net>
  * Copyright (C) 2005-2012 Regis Houssin		<regis.houssin@capnetworks.com>
  * Copyright (C) 2014-2015 Marcos García        <marcosgdf@gmail.com>
+ * Copyright (C) 2018      Frédéric France      <frederic.france@netlogic.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -74,7 +75,7 @@ class pdf_rouget extends ModelePdfExpedition
 		$this->posxqtytoship=$this->page_largeur - $this->marge_droite - 28;
 		$this->posxpuht=$this->page_largeur - $this->marge_droite;
 
-		if (!empty($conf->global->MAIN_PDF_SHIPPING_DISPLAY_AMOUNT_HT)) {
+		if (!empty($conf->global->MAIN_PDF_SHIPPING_DISPLAY_AMOUNT_HT)) {	// Show also the prices
 
 			$this->posxweightvol=$this->page_largeur - $this->marge_droite - 118;
 			$this->posxqtyordered=$this->page_largeur - $this->marge_droite - 96;
@@ -122,15 +123,8 @@ class pdf_rouget extends ModelePdfExpedition
 		// For backward compatibility with FPDF, force output charset to ISO, because FPDF expect text to be encoded in ISO
 		if (! empty($conf->global->MAIN_USE_FPDF)) $outputlangs->charset_output='ISO-8859-1';
 
-		$outputlangs->load("main");
-		$outputlangs->load("dict");
-		$outputlangs->load("companies");
-		$outputlangs->load("bills");
-		$outputlangs->load("products");
-		$outputlangs->load("propal");
-		$outputlangs->load("deliveries");
-        $outputlangs->load("sendings");
-		$outputlangs->load("productbatch");
+		// Translations
+		$outputlangs->loadLangs(array("main", "bills", "products", "dict", "companies", "propal", "deliveries", "sendings", "productbatch"));
 
 		$nblignes = count($object->lines);
 
@@ -225,6 +219,7 @@ class pdf_rouget extends ModelePdfExpedition
 				$heightforinfotot = 8;	// Height reserved to output the info and total part
 		        $heightforfreetext= (isset($conf->global->MAIN_PDF_FREETEXT_HEIGHT)?$conf->global->MAIN_PDF_FREETEXT_HEIGHT:5);	// Height reserved to output the free text on last page
 	            $heightforfooter = $this->marge_basse + 8;	// Height reserved to output the footer (value include bottom margin)
+	            if ($conf->global->MAIN_GENERATE_DOCUMENTS_SHOW_FOOT_DETAILS >0) $heightforfooter+= 6;
                 $pdf->SetAutoPageBreak(1,0);
 
                 if (class_exists('TCPDF'))
@@ -234,7 +229,7 @@ class pdf_rouget extends ModelePdfExpedition
                 }
                 $pdf->SetFont(pdf_getPDFFont($outputlangs));
                 // Set path to the background PDF File
-                if (empty($conf->global->MAIN_DISABLE_FPDI) && ! empty($conf->global->MAIN_ADD_PDF_BACKGROUND))
+                if (! empty($conf->global->MAIN_ADD_PDF_BACKGROUND))
                 {
                     $pagecount = $pdf->setSourceFile($conf->mycompany->dir_output.'/'.$conf->global->MAIN_ADD_PDF_BACKGROUND);
                     $tplidx = $pdf->importPage(1);
@@ -516,6 +511,7 @@ class pdf_rouget extends ModelePdfExpedition
 						$pagenb++;
 						$pdf->setPage($pagenb);
 						$pdf->setPageOrientation('', 1, 0);	// The only function to edit the bottom margin of current page to set it.
+						if (empty($conf->global->MAIN_PDF_DONOTREPEAT_HEAD)) $this->_pagehead($pdf, $object, 0, $outputlangs);
 					}
 					if (isset($object->lines[$i+1]->pagebreak) && $object->lines[$i+1]->pagebreak)
 					{
@@ -532,6 +528,7 @@ class pdf_rouget extends ModelePdfExpedition
 						$pdf->AddPage();
 						if (! empty($tplidx)) $pdf->useTemplate($tplidx);
 						$pagenb++;
+						if (empty($conf->global->MAIN_PDF_DONOTREPEAT_HEAD)) $this->_pagehead($pdf, $object, 0, $outputlangs);
 					}
 				}
 
@@ -932,7 +929,7 @@ class pdf_rouget extends ModelePdfExpedition
 		 		$carac_emetteur .= ($carac_emetteur ? "\n" : '' ).$outputlangs->transnoentities("Name").": ".$outputlangs->convToOutputCharset($object->user->getFullName($outputlangs))."\n";
 		 	}
 
-		 	$carac_emetteur .= pdf_build_address($outputlangs, $this->emetteur, $object->thirdparty);
+		 	$carac_emetteur .= pdf_build_address($outputlangs, $this->emetteur, $object->thirdparty, '', 0, 'source', $object);
 
 			// Show sender
 			$posy=!empty($conf->global->MAIN_PDF_USE_ISO_LOCATION) ? 40 : 42;

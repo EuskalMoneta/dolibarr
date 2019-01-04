@@ -194,15 +194,16 @@ class FormActions
             $projectid = $object->fk_project;
             if ($typeelement == 'project') $projectid = $object->id;
 
+            $newcardbutton='';
 			if (! empty($conf->agenda->enabled))
 			{
-				$buttontoaddnewevent = '<a href="'.DOL_URL_ROOT.'/comm/action/card.php?action=create&datep='.dol_print_date(dol_now(),'dayhourlog').'&origin='.$typeelement.'&originid='.$object->id.($object->socid>0?'&socid='.$object->socid:($socid>0?'&socid='.$socid:'')).($projectid>0?'&projectid='.$projectid:'').'&backtopage='.urlencode($urlbacktopage).'">';
-				$buttontoaddnewevent.= $langs->trans("AddEvent");
-				$buttontoaddnewevent.= '</a>';
+				$newcardbutton = '<a class="butActionNew" href="'.DOL_URL_ROOT.'/comm/action/card.php?action=create&datep='.dol_print_date(dol_now(),'dayhourlog').'&origin='.$typeelement.'&originid='.$object->id.($object->socid>0?'&socid='.$object->socid:($socid>0?'&socid='.$socid:'')).($projectid>0?'&projectid='.$projectid:'').'&backtopage='.urlencode($urlbacktopage).'"><span class="valignmiddle">'.$langs->trans("AddEvent").'</span>';
+				$newcardbutton.= '<span class="fa fa-plus-circle valignmiddle"></span>';
+				$newcardbutton.= '</a>';
 			}
 
         	print '<!-- formactions->showactions -->'."\n";
-        	print load_fiche_titre($title, $buttontoaddnewevent, '', 0, 0, '', $morehtmlright);
+        	print load_fiche_titre($title, $newcardbutton, '', 0, 0, '', $morehtmlright);
 
         	$page=0; $param='';
 
@@ -321,7 +322,7 @@ class FormActions
     {
         global $langs,$user,$form,$conf;
 
-        if (! is_object($form)) $form=new Form($db);
+        if (! is_object($form)) $form=new Form($this->db);
 
         require_once DOL_DOCUMENT_ROOT.'/comm/action/class/cactioncomm.class.php';
         require_once DOL_DOCUMENT_ROOT.'/core/class/html.form.class.php';
@@ -346,7 +347,7 @@ class FormActions
 		}
 		else
 		{
-			$out.=$form->selectarray($htmlname, $arraylist, $selected, 0, 0, 0, '', 0, 0, 0, '', '', 1);
+			$out.=$form->selectarray($htmlname, $arraylist, $selected, 0, 0, 0, '', 0, 0, 0, '', 'minwidth200', 1);
 		}
 
         if ($user->admin && empty($onlyautoornot) && $hideinfohelp <= 0)

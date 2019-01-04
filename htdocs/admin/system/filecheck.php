@@ -3,6 +3,7 @@
  * Copyright (C) 2007       Rodolphe Quiedeville    <rodolphe@quiedeville.org>
  * Copyright (C) 2007-2012  Regis Houssin           <regis.houssin@capnetworks.com>
  * Copyright (C) 2015       Frederic France         <frederic.france@free.fr>
+ * Copyright (C) 2017       Nicolas ZABOURI         <info@inovea-conseil.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,6 +39,8 @@ $error=0;
 /*
  * View
  */
+
+@set_time_limit(300);
 
 llxHeader();
 
@@ -140,7 +143,7 @@ if (GETPOST('target') == 'remote')
     if (! $xmlarray['curl_error_no'] && $xmlarray['http_code'] != '404')
     {
         $xmlfile = $xmlarray['content'];
-        //print "eee".$xmlfile."eee";
+        //print "xmlfilestart".$xmlfile."xmlfileend";
         $xml = simplexml_load_string($xmlfile);
     }
     else
@@ -334,7 +337,13 @@ if (! $error && $xml)
                 $i++;
                 $out.='<tr class="oddeven">';
                 $out.='<td>'.$i.'</td>' . "\n";
-                $out.='<td>'.$file['filename'].'</td>' . "\n";
+                $out.='<td>'.$file['filename'];
+                $out.=PHP_OS;
+                if (! preg_match('/^win/i',PHP_OS)) {
+                	$htmltext=$langs->trans("YouCanDeleteFileOnServerWith", 'rm '.DOL_DOCUMENT_ROOT.'/'.$file['filename']);
+                	$out.=' '.$form->textwithpicto('', $htmltext, 1, 'help', '', 0, 2, 'helprm');
+                }
+                $out.='</td>' . "\n";
                 $out.='<td align="center">'.$file['expectedmd5'].'</td>' . "\n";
                 $out.='<td align="center">'.$file['md5'].'</td>' . "\n";
                 $size = dol_filesize(DOL_DOCUMENT_ROOT.'/'.$file['filename']);

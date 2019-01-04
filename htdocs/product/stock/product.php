@@ -44,11 +44,8 @@ if (! empty($conf->projet->enabled))
 	require_once DOL_DOCUMENT_ROOT.'/projet/class/project.class.php';
 }
 
-$langs->load("products");
-$langs->load("orders");
-$langs->load("bills");
-$langs->load("stocks");
-$langs->load("sendings");
+// Load translation files required by the page
+$langs->loadlangs(array('products', 'orders', 'bills', 'stocks', 'sendings'));
 if (! empty($conf->productbatch->enabled)) $langs->load("productbatch");
 
 $backtopage=GETPOST('backtopage','alpha');
@@ -86,7 +83,7 @@ if ($id > 0 || ! empty($ref))
 
 }
 
-if(empty($id) && !empty($object->id)) $id = $object->id; 
+if(empty($id) && !empty($object->id)) $id = $object->id;
 
 $modulepart='product';
 
@@ -133,24 +130,19 @@ if ($action == 'addlimitstockwarehouse' && !empty($user->rights->produit->creer)
 	if($maj_ok) {
 
 		$pse = new ProductStockEntrepot($db);
-		if($pse->fetch('', $id, GETPOST('fk_entrepot')) > 0) {
-
+		if($pse->fetch(0, $id, GETPOST('fk_entrepot')) > 0) {
 			// Update
 			$pse->seuil_stock_alerte = $seuil_stock_alerte;
 			$pse->desiredstock  	 = $desiredstock;
 			if($pse->update($user) > 0) setEventMessage($langs->trans('ProductStockWarehouseUpdated'));
-
 		} else {
-
 			// Create
 			$pse->fk_entrepot 		 = GETPOST('fk_entrepot');
 			$pse->fk_product  	 	 = $id;
 			$pse->seuil_stock_alerte = GETPOST('seuil_stock_alerte');
 			$pse->desiredstock  	 = GETPOST('desiredstock');
 			if($pse->create($user) > 0) setEventMessage($langs->trans('ProductStockWarehouseCreated'));
-
 		}
-
 	}
 
 	header("Location: ".$_SERVER["PHP_SELF"]."?id=".$id);
@@ -162,11 +154,9 @@ if($action == 'delete_productstockwarehouse' && !empty($user->rights->produit->c
 {
 
 	$pse = new ProductStockEntrepot($db);
-	$pse->fetch(GETPOST('fk_productstockwarehouse'));
+	$pse->fetch(GETPOST('fk_productstockwarehouse','int'));
 	if($pse->delete($user) > 0) setEventMessage($langs->trans('ProductStockWarehouseDeleted'));
-
 	$action = '';
-
 }
 
 // Set stock limit
@@ -919,7 +909,6 @@ if ($resql)
 			}
 		}
 		$i++;
-
 	}
 }
 else dol_print_error($db);
@@ -992,8 +981,8 @@ if (!empty($conf->global->STOCK_ALLOW_ADD_LIMIT_STOCK_BY_WAREHOUSE))
 
 	print "</table>";
 
-	if (!empty($user->rights->produit->creer)){ 
-	    print '</form>'; 
+	if (!empty($user->rights->produit->creer)){
+	    print '</form>';
 	}
 }
 

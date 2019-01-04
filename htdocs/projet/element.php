@@ -53,10 +53,8 @@ if (! empty($conf->stock->enabled))			require_once DOL_DOCUMENT_ROOT.'/product/s
 if (! empty($conf->tax->enabled))			require_once DOL_DOCUMENT_ROOT.'/compta/sociales/class/chargesociales.class.php';
 if (! empty($conf->banque->enabled))		require_once DOL_DOCUMENT_ROOT.'/compta/bank/class/paymentvarious.class.php';
 
-$langs->load("projects");
-$langs->load("companies");
-$langs->load("suppliers");
-$langs->load("compta");
+// Load translation files required by the page
+$langs->loadLangs(array('projects', 'companies', 'suppliers', 'compta'));
 if (! empty($conf->facture->enabled))  	    $langs->load("bills");
 if (! empty($conf->commande->enabled)) 	    $langs->load("orders");
 if (! empty($conf->propal->enabled))   	    $langs->load("propal");
@@ -291,8 +289,8 @@ $listofreferent=array(
 	'title'=>"ListSupplierProposalsAssociatedProject",
 	'class'=>'SupplierProposal',
 	'table'=>'supplier_proposal',
-	'datefieldname'=>'datec',
-    'urlnew'=>DOL_URL_ROOT.'/supplier_proposal/card.php?action=create&projectid='.$id.'&socid='.$socid,
+	'datefieldname'=>'date',
+	'urlnew'=>DOL_URL_ROOT.'/supplier_proposal/card.php?action=create&projectid='.$id,	// No socid parameter here, the socid is often the customer and we create a supplier object
     'lang'=>'supplier_proposal',
     'buttonnew'=>'AddSupplierProposal',
     'testnew'=>$user->rights->supplier_proposal->creer,
@@ -552,8 +550,6 @@ print '<td align="right" width="100">'.$langs->trans("AmountHT").'</td>';
 print '<td align="right" width="100">'.$langs->trans("AmountTTC").'</td>';
 print '</tr>';
 
-$var = false;
-
 foreach ($listofreferent as $key => $value)
 {
 	$name=$langs->trans($value['name']);
@@ -608,6 +604,10 @@ foreach ($listofreferent as $key => $value)
 				if ($key == 'invoice')
 				{
 					if (! empty($element->close_code) && $element->close_code == 'replaced') $qualifiedfortotal=false;	// Replacement invoice, do not include into total
+				}
+				if ($key == 'propal')
+				{
+					if ($element->statut == Propal::STATUS_NOTSIGNED) $qualifiedfortotal=false;	// Refused proposal must not be included in total
 				}
 
 				if ($qualifiedfortotal) $total_ht = $total_ht + $total_ht_by_line;
@@ -748,9 +748,9 @@ foreach ($listofreferent as $key => $value)
 		if (empty($conf->global->PROJECT_CREATE_ON_OVERVIEW_DISABLED) && $urlnew)
 		{
 			$addform.='<div class="inline-block valignmiddle">';
-			if ($testnew) $addform.='<a class="buttonxxx" href="'.$urlnew.'">'.($buttonnew?$langs->trans($buttonnew):$langs->trans("Create")).'</a>';
+			if ($testnew) $addform.='<a class="buttonxxx" href="'.$urlnew.'">'.($buttonnew?$langs->trans($buttonnew):$langs->trans("Create")).' <span class="fa fa-plus-circle valignmiddle"></span></a>';
 			elseif (empty($conf->global->MAIN_BUTTON_HIDE_UNAUTHORIZED)) {
-				$addform.='<a class="buttonxxx buttonRefused" disabled="disabled" href="#">'.($buttonnew?$langs->trans($buttonnew):$langs->trans("Create")).'</a>';
+				$addform.='<a class="buttonxxx buttonRefused" disabled="disabled" href="#">'.($buttonnew?$langs->trans($buttonnew):$langs->trans("Create")).' <span class="fa fa-plus-circle valignmiddle"></span></a>';
 			}
             $addform.='<div>';
 		}

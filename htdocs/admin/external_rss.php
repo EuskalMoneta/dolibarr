@@ -31,6 +31,7 @@ require '../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/rssparser.class.php';
 
+// Load translation files required by the page
 $langs->load("admin");
 
 // Security check
@@ -241,16 +242,14 @@ if ($resql)
 	{
 		$obj = $db->fetch_object($resql);
 
-	    preg_match('/^([0-9]+)/i',$obj->note,$reg);
+		preg_match('/^([0-9]+)/i',$obj->note,$reg);
 		$idrss = $reg[1];
-        $keyrssurl="EXTERNAL_RSS_URLRSS_".$idrss;
-        $keyrsstitle="EXTERNAL_RSS_URLRSS_".$idrss;
+		$keyrsstitle="EXTERNAL_RSS_TITLE_".$idrss;
+		$keyrssurl="EXTERNAL_RSS_URLRSS_".$idrss;
         //print "x".$idrss;
 
         $rssparser=new RssParser($db);
 		$result = $rssparser->parser($conf->global->$keyrssurl, 5, 300, $conf->externalrss->dir_temp);
-
-		$var=true;
 
 		print "<br>";
 		print "<form name=\"externalrssconfig\" action=\"".$_SERVER["PHP_SELF"]."\" method=\"post\">";

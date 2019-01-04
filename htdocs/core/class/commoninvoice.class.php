@@ -180,12 +180,6 @@ abstract class CommonInvoice extends CommonObject
 	 */
 	function getSumCreditNotesUsed($multicurrency=0)
 	{
-	    if ($this->element == 'facture_fourn' || $this->element == 'invoice_supplier')
-	    {
-	        // TODO
-	        return 0;
-	    }
-
 	    require_once DOL_DOCUMENT_ROOT.'/core/class/discount.class.php';
 
 	    $discountstatic=new DiscountAbsolute($this->db);
@@ -334,12 +328,13 @@ abstract class CommonInvoice extends CommonObject
 	/**
 	 *  Return if an invoice can be deleted
 	 *	Rule is:
-	 *  If invoice is draft and has a temporary ref -> yes
+	 *  If invoice is draft and has a temporary ref -> yes (1)
 	 *  If hidden option INVOICE_CAN_NEVER_BE_REMOVED is on -> no (0)
 	 *  If invoice is dispatched in bookkeeping -> no (-1)
 	 *  If invoice has a definitive ref, is not last and INVOICE_CAN_ALWAYS_BE_REMOVED off -> no (-2)
 	 *  If invoice not last in a cycle -> no (-3)
 	 *  If there is payment -> no (-4)
+	 *  Otherwise -> yes (2)
 	 *
 	 *  @return    int         <=0 if no, >0 if yes
 	 */
@@ -387,7 +382,7 @@ abstract class CommonInvoice extends CommonObject
 		// Test if there is at least one payment. If yes, refuse to delete.
 		if (empty($conf->global->INVOICE_CAN_ALWAYS_BE_REMOVED) && $this->getSommePaiement() > 0) return -4;
 
-		return 1;
+		return 2;
 	}
 
 	/**
@@ -602,9 +597,11 @@ abstract class CommonInvoice extends CommonObject
 
 		$sqltemp = 'SELECT c.type_cdr,c.nbjour,c.decalage';
 		$sqltemp.= ' FROM '.MAIN_DB_PREFIX.'c_payment_term as c';
-		$sqltemp.= " WHERE c.entity IN (" . getEntity('c_payment_term').")";
-		if (is_numeric($cond_reglement)) $sqltemp.= " AND c.rowid=".$cond_reglement;
-		else $sqltemp.= " AND c.code='".$this->db->escape($cond_reglement)."'";
+		if (is_numeric($cond_reglement)) $sqltemp.= " WHERE c.rowid=".$cond_reglement;
+		else {
+			$sqltemp.= " WHERE c.entity IN (".getEntity('c_payment_term').")";
+			$sqltemp.= " AND c.code='".$this->db->escape($cond_reglement)."'";
+		}
 
 		dol_syslog(get_class($this).'::calculate_date_lim_reglement', LOG_DEBUG);
 		$resqltemp=$this->db->query($sqltemp);
@@ -680,7 +677,7 @@ abstract class CommonInvoiceLine extends CommonObjectLine
 {
 	/**
 	 * Quantity
-	 * @var int
+	 * @var double
 	 */
 	public $qty;
 
