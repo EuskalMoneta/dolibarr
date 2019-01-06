@@ -21,7 +21,7 @@ $error=0;
 require_once($path."../../htdocs/master.inc.php");
 // After this $db, $mysoc, $langs and $conf->entity are defined. Opened handler to database will be closed at end of file.
 require_once(DOL_DOCUMENT_ROOT."/adherents/class/adherent.class.php");
-require_once(DOL_DOCUMENT_ROOT."/adherents/class/cotisation.class.php");
+require_once(DOL_DOCUMENT_ROOT."/adherents/class/subscription.class.php");
 require_once DOL_DOCUMENT_ROOT."/compta/bank/class/account.class.php";
 
 //$langs->setDefaultLang('en_US'); 	// To change default language of $langs
@@ -110,7 +110,7 @@ if ($debut_d_annee || $cotisation_offerte) {
 	$emetteur_banque = '';
 
 	// Création de la cotisation
-	$cotis_id = $adherent->cotisation($date_debut, $montant, $accountid, $operation, $label, $num_chq, $emetteur_nom, $emetteur_banque, $date_fin);
+	$cotis_id = $adherent->subscription($date_debut, $montant, $accountid, $operation, $label, $num_chq, $emetteur_nom, $emetteur_banque, $date_fin);
 	if ($cotis_id <= 0) {
 		throw new Exception("Erreur lors de la création de la cotisation : $adherent->error.\n");
 	}
@@ -185,7 +185,7 @@ if ($debut_d_annee || $cotisation_offerte) {
 		$emetteur_banque = '';
 
 		// Création de la cotisation
-		$cotis_id = $adherent->cotisation($date_debut, $montant, $accountid, $operation, $label, $num_chq, $emetteur_nom, $emetteur_banque, $date_fin);
+		$cotis_id = $adherent->subscription($date_debut, $montant, $accountid, $operation, $label, $num_chq, $emetteur_nom, $emetteur_banque, $date_fin);
 		if ($cotis_id <= 0) {
 			print "Erreur lors de la création de la cotisation : $adherent->error.\n";
 			$error = 1;
@@ -213,7 +213,7 @@ if ($debut_d_annee || $cotisation_offerte) {
 				break;
 			} else {
 				// Création du lien entre la cotisation et l'enregistrement bancaire
-				$sql_majcotis = "UPDATE ".MAIN_DB_PREFIX."cotisation SET fk_bank=".$insertid;
+				$sql_majcotis = "UPDATE ".MAIN_DB_PREFIX."subscription SET fk_bank=".$insertid;
 				$sql_majcotis .= " WHERE rowid=".$cotis_id;
 				$resql_majcotis = $db->query($sql_majcotis);
 				if (! $resql_majcotis) {
