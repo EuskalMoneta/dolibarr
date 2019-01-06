@@ -158,7 +158,7 @@ if ($_GET["socid"])
 		{
 			$socm = $db->fetch_object($resql);
 
-			print '<a href="'.DOL_URL_ROOT.'/societe/soc.php?socid='.$socm->rowid.'">'.img_object($langs->trans("ShowCompany"),'company').' '.$socm->nom.'</a>'.($socm->code_client?" (".$socm->code_client.")":"");
+			print '<a href="'.DOL_URL_ROOT.'/societe/card.php?socid='.$socm->rowid.'">'.img_object($langs->trans("ShowCompany"),'company').' '.$socm->nom.'</a>'.($socm->code_client?" (".$socm->code_client.")":"");
 			print ($socm->town?' - '.$socm->town:'');
 			print '&nbsp;<a href="'.$_SERVER["PHP_SELF"].'?socid='.$_GET["socid"].'&amp;delfourid='.$socm->rowid.'">';
 			print img_delete();
