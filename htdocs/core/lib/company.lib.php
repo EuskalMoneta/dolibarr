@@ -1957,6 +1957,7 @@ function show_customers($conf,$langs,$db,$object)
 	{
 		$socstatic = new Societe($db);
 
+		print '<div class="fichecenter">';
 		print_titre($langs->trans("SupplierOf"));
 		print "\n".'<table class="noborder" width="100%">'."\n";
 
@@ -1997,6 +1998,7 @@ function show_customers($conf,$langs,$db,$object)
 			$i++;
 		}
 		print "\n</table>\n";
+		print '</div>';
 	}
 
 	print "<br>\n";
