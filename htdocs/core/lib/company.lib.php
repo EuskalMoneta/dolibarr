@@ -1891,6 +1891,7 @@ function show_asso($conf,$langs,$db,$object)
 	{
 		$adhstatic = new Adherent($db);
 
+		print '<div class="fichecenter">';
 		print_titre($langs->trans("Parrains") . ' (' . $num . ')');
 		print "\n".'<table class="noborder" width="100%">'."\n";
 
@@ -1916,6 +1917,7 @@ function show_asso($conf,$langs,$db,$object)
 			$i++;
 		}
 		print "\n</table>\n";
+		print '</div>';
 	}
 
 	print "<br>\n";
