@@ -2290,6 +2290,10 @@ function getModuleDirForApiClass($module)
     elseif ($module == 'tickets') {
     	$moduledirforclass = 'ticket';
     }
+    // PATCH ASSO
+    elseif ($module == 'associations') {
+        $moduledirforclass = 'societe';
+    }
 
     return $moduledirforclass;
 }
