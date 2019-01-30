@@ -87,11 +87,12 @@ class Members extends DolibarrApi
      * @param int       $page       Page number
      * @param string    $typeid     ID of the type of member
      * @param string    $sqlfilters Other criteria to filter answers separated by a comma. Syntax example "(t.ref:like:'SO-%') and (t.date_creation:<:'20160101')"
+     * @param string    $token      To filter the members by token
      * @return array                Array of member objects
      *
      * @throws RestException
      */
-    function index($sortfield = "t.rowid", $sortorder = 'ASC', $limit = 100, $page = 0, $typeid = '', $sqlfilters = '') {
+    function index($sortfield = "t.rowid", $sortorder = 'ASC', $limit = 100, $page = 0, $typeid = '', $sqlfilters = '', $token = '') {
         global $db, $conf;
 
         $obj_ret = array();
@@ -102,10 +103,16 @@ class Members extends DolibarrApi
 
         $sql = "SELECT t.rowid";
         $sql.= " FROM ".MAIN_DB_PREFIX."adherent as t";
+        if (!empty($token)) {
+            $sql .= " JOIN ".MAIN_DB_PREFIX."adherent_extrafields as e ON t.rowid = e.fk_object";
+        }
         $sql.= ' WHERE t.entity IN ('.getEntity('adherent').')';
         if (!empty($typeid))
         {
             $sql.= ' AND t.fk_adherent_type='.$typeid;
+        }
+        if (!empty($token)) {
+            $sql .= " AND e.token = '".$token."'";
         }
         // Add sql filters
         if ($sqlfilters)
