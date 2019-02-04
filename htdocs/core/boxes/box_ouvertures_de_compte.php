@@ -217,13 +217,14 @@ class box_ouvertures_de_compte extends ModeleBoxes
 	}
 
 	/**
-	 *	Method to show box
+	 * Method to show box
 	 *
-	 *	@param	array	$head       Array with properties of box title
-	 *	@param  array	$contents   Array with properties of box lines
-	 *	@return	void
+	 * @param   array   $head       Array with properties of box title
+	 * @param   array   $contents   Array with properties of box lines
+	 * @param   int     $nooutput   No print, only return string
+	 * @return  string
 	 */
-	function showBox($head = null, $contents = null)
+	function showBox($head = null, $contents = null, $nooutput=0)
 	{
 		parent::showBox($this->info_box_head, $this->info_box_contents);
 	}
