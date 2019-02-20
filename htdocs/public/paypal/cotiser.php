@@ -5,7 +5,6 @@ define("NOCSRFCHECK",1);	// We accept to go on this page from external web site.
 require '../../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/paypal/lib/paypal.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/adherents/class/adherent.class.php';
-require_once DOL_DOCUMENT_ROOT.'/adherents/class/cotisation.class.php';
 
 $langs->load("main");
 $langs->load("other");
@@ -23,12 +22,11 @@ $langs->load("members");
 //   (paramètre numadh) : dans ce cas les informations de l'adhérent seront
 //   automatiquement chargées à partir de Dolibarr
 
-// Montants minimum et maximum de la cotisation pour les utilisateurs.
+// Montant minimum de la cotisation pour les particuliers.
 define('MONTANT_MINIMUM', 5);
-define('MONTANT_MAXIMUM', 20);
 
 // Année jusqu'à la fin de laquelle la cotisation sera valable.
-define('ANNEE_FIN_COTISATION', 2017);
+define('ANNEE_FIN_COTISATION', 2019);
 
 // Numéro de l'adhérent.
 $numadh=GETPOST("numadh",'alpha');
@@ -85,7 +83,7 @@ if (GETPOST("action") == 'validate')
 	// On utilise le tag pour noter le numéro d'adhérent.
 	if (empty($mesg)) {
 		if (empty($numadh)) {
-			$tag = "Nouvelle adhésion de $prenomadh $nomadh (cotisation jusqu'à fin ".ANNEE_FIN_COTISATION.").";
+			$tag = "Nouvelle adhesion de $prenomadh $nomadh (cotisation jusqu'a fin ".ANNEE_FIN_COTISATION.").";
 
 			// Le tag sera inclus dans le numéro de facture, et celui-ci ne
 			// doit comporter que des caractères ASCII, il faut donc transcrire
@@ -123,7 +121,6 @@ if (GETPOST("action") == 'validate')
  */
 
 $title = "Urtesariaren ordainketa - <em>Paiement de la cotisation</em>";
-llxHeaderPaypal($title);
 
 print '<span id="dolpaymentspan"></span>'."\n";
 print '<center>'."\n";
@@ -170,58 +167,36 @@ $text  = "<tr><td><br><center><b>$title</b></center><br>";
 if (empty($numadh)) {
 	// Cas d'une nouvelle adhésion
 	$text .= "Euskal Monetari kidetze inprimakia bete berri duzu. Orai zure urtesaria ordaindu behar duzu, ".ANNEE_FIN_COTISATION."eko bukaera arte bali izanen dena.<br />";
-	$text .= "Zure deitura eta izena sar hitzatu otoi, bai eta zure urtesariaren zenbatekoa:
-<ul>
-<li>soziala : 5 €</li>
-<li>normala : 10 €</li>
-<li>sustengatzailea : 20 € edo gehiago</li>
-</ul>";
-	$text .= "Zure kide karta postaz igorria izanen zauzu.<br /><br />";
+	$text .= "Zure deitura eta izena sar hitzatu otoi, bai eta zure urtesariaren zenbatekoa:";
 } else {
 	// Cas d'un renouvellement de cotisation
-	$text .= "Orai Euskal Monetari urtesaria berritzen ahal duzu. Hauta zazu zenbateko urtesaria ordaindu nahi duzun (".ANNEE_FIN_COTISATION."eko bukaera arte bali izanen da):
-<ul>
-<li>erabiltzaileentzat:
-<ul>
-<li>soziala : 5 €</li>
-<li>normala : 10 €</li>
-<li>sustengatzailea : 20 € edo gehiago</li>
-</ul>
-</li>
-<li>enpresentzat : 60 eta 240&nbsp;€ artean</li>
-<li>elkarteentzat : 10 eta 100&nbsp;€ artean</li>
-</ul>";
-	$text .= "Zure kide karta postaz igorria izanen zauzu.<br /><br />";
+	$text .= "Orai Euskal Monetari urtesaria berritzen ahal duzu. Hauta zazu zenbateko urtesaria ordaindu nahi duzun (".ANNEE_FIN_COTISATION."eko bukaera arte bali izanen da):";
 }
+$text .= "<ul>
+<li>1 € hilabetean / 12 € urtean</li>
+<li>2 € hilabetean / 24 € urtean</li>
+<li>3 € hilabetean / 36 € urtean</li>
+<li>5 € urtean (langabeak, gutieneko ahalak dituztenak)</li>
+</ul>";
+$text .= "Zure kide karta postaz igorria izanen zauzu.<br /><br />";
 
 // Intro en français
 $text .= "<em>";
 if (empty($numadh)) {
 	// Cas d'une nouvelle adhésion
 	$text .= "Vous venez de remplir le formulaire d'adhésion à Euskal Moneta. Vous devez maintenant régler votre cotisation, celle-ci sera valable jusqu'à fin ".ANNEE_FIN_COTISATION.".<br />";
-	$text .= "Veuillez indiquer vos nom et prénom ainsi que le montant de votre cotisation&nbsp;:
-<ul>
-<li>sociale : 5 €</li>
-<li>normale : 10 €</li>
-<li>soutien : 20 € ou plus</li>
-</ul>";
-	$text .= "Votre carte d'adhérent(e) vous sera envoyée par courrier.</em><br /><br />";
+	$text .= "Veuillez indiquer vos nom et prénom ainsi que le montant de votre cotisation&nbsp;:";
 } else {
 	// Cas d'un renouvellement de cotisation
-	$text .= "Vous allez maintenant pouvoir renouveler votre cotisation à Euskal Moneta. Veuillez indiquer le montant de votre cotisation (celle-ci sera valable jusqu'à fin ".ANNEE_FIN_COTISATION.")&nbsp;:
-<ul>
-<li>pour les utilisateurs&nbsp;:
-<ul>
-<li>sociale : 5 €</li>
-<li>normale : 10 €</li>
-<li>soutien : 20 € ou plus</li>
-</ul>
-</li>
-<li>pour les entreprises&nbsp;: entre 60 et 240&nbsp;€</li>
-<li>pour les associations&nbsp;: entre 10 et 100&nbsp;€</li>
-</ul>";
-	$text .= "Votre carte d'adhérent(e) vous sera envoyée par courrier.</em><br /><br />";
+	$text .= "Vous allez maintenant pouvoir renouveler votre cotisation à Euskal Moneta. Veuillez indiquer le montant de votre cotisation (celle-ci sera valable jusqu'à fin ".ANNEE_FIN_COTISATION.")&nbsp;:";
 }
+$text .= "<ul>
+<li>1 € par mois / 12 € par an</li>
+<li>2 € par mois / 24 € par an</li>
+<li>3 € par mois / 36 € par an</li>
+<li>5 € par an (chômeurs, minima sociaux)</li>
+</ul>";
+$text .= "Votre carte d'adhérent(e) vous sera envoyée par courrier.</em><br /><br />";
 $text .= "</td></tr>\n";
 
 print $text;
@@ -312,7 +287,5 @@ print '</table>'."\n";
 print '</form>'."\n";
 print '</center>'."\n";
 print '<br>';
-
-llxFooterPaypal();
 
 $db->close();

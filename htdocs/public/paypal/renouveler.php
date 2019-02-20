@@ -78,7 +78,6 @@ if (GETPOST("action") == 'validate')
  */
 
 $title = "Urtesariaren berritzea - <em>Renouvellement de la cotisation</em>";
-llxHeaderPaypal($title);
 
 print '<span id="dolpaymentspan"></span>'."\n";
 print '<center>'."\n";
@@ -161,7 +160,5 @@ print '</table>'."\n";
 print '</form>'."\n";
 print '</center>'."\n";
 print '<br>';
-
-llxFooterPaypal();
 
 $db->close();
