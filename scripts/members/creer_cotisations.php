@@ -93,9 +93,9 @@ if ($debut_d_annee || $cotisation_offerte) {
 
 	if ($debut_d_annee) {
 		if ($adherent->login[0] === 'E') {
-			$jour_fin = "15/01";
+			$jour_fin = "16/01";
 		} else if ($adherent->login[0] === 'Z') {
-			$jour_fin = "05/01";
+			$jour_fin = "06/01";
 		}
 	} else if ($cotisation_offerte) {
 		$jour_fin = "31/12";
