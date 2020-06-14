@@ -473,6 +473,12 @@ class Documents extends DolibarrApi
 					throw new RestException(500, 'Error while fetching Task '.$ref);
 				}
 			}
+			else if ($modulepart == 'adherent' || $modulepart == 'member')
+			{
+				$modulepart='adherent';
+				require_once DOL_DOCUMENT_ROOT.'/adherents/class/adherent.class.php';
+				$object = new Adherent($this->db);
+			}
 			// TODO Implement additional moduleparts
 			else
 			{
@@ -526,8 +532,13 @@ class Documents extends DolibarrApi
 
 		$upload_dir = dol_sanitizePathName($upload_dir);
 
-		$destfile = $upload_dir . '/' . $original_file;
-		$destfiletmp = DOL_DATA_ROOT.'/admin/temp/' . $original_file;
+		if (dol_mkdir($upload_dir) < 0) // needed by products
+		{
+		    throw new RestException(500, 'Error while trying to create directory.');
+		}
+
+		$destfile = $upload_dir.'/'.$original_file;
+		$destfiletmp = DOL_DATA_ROOT.'/admin/temp/'.$original_file;
 		dol_delete_file($destfiletmp);
 		//var_dump($original_file);exit;
 
@@ -535,7 +546,7 @@ class Documents extends DolibarrApi
 			throw new RestException(401, 'Directory not exists : '.dirname($destfile));
 		}
 
-		if (! $overwriteifexists && dol_is_file($destfile))
+		if (!$overwriteifexists && dol_is_file($destfile))
 		{
 			throw new RestException(500, "File with name '".$original_file."' already exists.");
 		}
