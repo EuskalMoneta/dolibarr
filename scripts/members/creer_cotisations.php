@@ -160,9 +160,23 @@ if ($debut_d_annee || $cotisation_offerte) {
 			array("debut" => "01/07/".$annee, "fin" => "31/12/".$annee),
 		);
 	} else if ($periodicite === 12) {
-		$cotisations_a_creer = array(
-			array("debut" => "01/01/".$annee, "fin" => "31/12/".$annee),
-		);
+		if ($premier_mois) {
+			// Si l'option "premier mois" a été passée en argument et
+			// que la cotisation est en prélèvement annuel, on génère
+			// une cotisation au prorata pour les mois restants.
+			$nb_mois = 12 - $premier_mois + 1;
+			$montant = $montant * $nb_mois / 12;
+			$debut = sprintf("01/%02d/", $premier_mois);
+			$cotisations_a_creer = array(
+				array("debut" => $debut.$annee, "fin" => "31/12/".$annee),
+			);
+		} else {
+			// Cas général : prélèvement annuel du montant total de la
+			// /.cotisation
+			$cotisations_a_creer = array(
+				array("debut" => "01/01/".$annee, "fin" => "31/12/".$annee),
+			);
+		}
 	}
 
 	foreach ($cotisations_a_creer as $cotis) {
