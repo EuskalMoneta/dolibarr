@@ -1874,16 +1874,24 @@ function show_subsidiaries($conf,$langs,$db,$object)
  */
 function show_asso($conf,$langs,$db,$object)
 {
-	global $user;
-	global $bc;
-
-	$i=-1;
-
-	$sql = "SELECT a.rowid, a.login, a.lastname, a.firstname";
+	$sql = "SELECT a.rowid, a.login, a.lastname, a.firstname,a.datefin";
 	$sql.= " FROM ".MAIN_DB_PREFIX."adherent as a";
 	$sql.= " WHERE a.fk_asso = ".$object->id;
+    $sql.= " AND a.datefin >= NOW()";
 	$sql.= " ORDER BY a.lastname, a.firstname";
+    afficher_liste_parrains($sql, "Parrains à jour de cotisation", $db, $langs);
 
+    $sql = "SELECT a.rowid, a.login, a.lastname, a.firstname,a.datefin";
+	$sql.= " FROM ".MAIN_DB_PREFIX."adherent as a";
+	$sql.= " WHERE a.fk_asso = ".$object->id;
+    $sql.= " AND a.datefin < NOW()";
+	$sql.= " ORDER BY a.lastname, a.firstname";
+    afficher_liste_parrains($sql, "Parrains non à jour de cotisation", $db, $langs);
+}
+
+
+function afficher_liste_parrains($sql, $title, $db, $langs)
+{
 	$result = $db->query($sql);
 	$num = $db->num_rows($result);
 
@@ -1892,13 +1900,12 @@ function show_asso($conf,$langs,$db,$object)
 		$adhstatic = new Adherent($db);
 
 		print '<div class="fichecenter">';
-		print_titre($langs->trans("Parrains") . ' (' . $num . ')');
+		print_titre($langs->trans($title) . ' (' . $num . ')');
 		print "\n".'<table class="noborder" width="100%">'."\n";
 
 		print '<tr class="liste_titre"><td>'.$langs->trans("Member").'</td></tr>';
 
-		$i=0;
-		while ($i < $num)
+		for ($i=0; $i < $num; $i++)
 		{
 			$obj = $db->fetch_object($result);
 			$var = !$var;
@@ -1914,15 +1921,12 @@ function show_asso($conf,$langs,$db,$object)
 			print '</td>';
 
 			print "</tr>\n";
-			$i++;
 		}
 		print "\n</table>\n";
 		print '</div>';
 	}
 
 	print "<br>\n";
-
-	return $i;
 }
 
 
