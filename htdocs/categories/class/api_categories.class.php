@@ -146,14 +146,16 @@ class Categories extends DolibarrApi
 		if (!empty($type)) {
 			$sql .= ' AND t.type='.array_search($type, Categories::$TYPES);
 		}
-		// Add sql filters
-		if ($sqlfilters) {
-			$errormessage = '';
-			$sql .= forgeSQLFromUniversalSearchCriteria($sqlfilters, $errormessage);
-			if ($errormessage) {
-				throw new RestException(400, 'Error when validating parameter sqlfilters -> '.$errormessage);
-			}
-		}
+        // Add sql filters
+        if ($sqlfilters)
+        {
+            if (! DolibarrApi::_checkFilters($sqlfilters))
+            {
+                throw new RestException(503, 'Error when validating parameter sqlfilters '.$sqlfilters);
+            }
+	        $regexstring='\(([^:\'\(\)]+:[^:\'\(\)]+:[^:\(\)]+)\)';
+            $sql.=" AND (".preg_replace_callback('/'.$regexstring.'/', 'DolibarrApi::_forge_criteria_callback', $sqlfilters).")";
+        }
 
 		$sql .= $this->db->order($sortfield, $sortorder);
 		if ($limit) {
