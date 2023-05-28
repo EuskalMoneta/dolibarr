@@ -244,7 +244,7 @@ class Thirdparties extends DolibarrApi
 			$this->company->$field = $value;
 		}
 
-		if($this->company->update($id, DolibarrApiAccess::$user,1,'','','update'))
+		if($this->company->update($id, DolibarrApiAccess::$user,1,1,1,'update'))
 			return $this->get($id);
 
 			return false;
