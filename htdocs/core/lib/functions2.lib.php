@@ -2674,6 +2674,10 @@ function getModuleDirForApiClass($moduleobject)
 	} elseif (in_array($moduleobject, array('products', 'expensereports', 'users', 'tickets', 'boms', 'receptions'))) {
 		$moduledirforclass = preg_replace('/s$/', '', $moduleobject);
 	}
+	// PATCH ASSO
+	elseif ($module == 'associations') {
+		$moduledirforclass = 'societe';
+	}
 
 	return $moduledirforclass;
 }

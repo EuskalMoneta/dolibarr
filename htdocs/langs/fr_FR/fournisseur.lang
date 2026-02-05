@@ -1,0 +1,4 @@
+# Dolibarr language file - fr_FR - fournisseur
+CHARSET=UTF-8
+NoSupplierAffected=Aucun fournisseur particulier affecté
+SupplierOf=Fournisseur de

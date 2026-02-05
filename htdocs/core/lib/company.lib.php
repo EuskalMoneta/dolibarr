@@ -436,9 +436,10 @@ function societe_prepare_head2($object)
 	$head[$h][2] = 'company';
 	$h++;
 
-	$head[$h][0] = 'commerciaux.php?socid='.$object->id;
-	$head[$h][1] = $langs->trans("SalesRepresentative");
-	$head[$h][2] = 'salesrepresentative';
+	// PATCH LIEN FOURNISSEURS
+	$head[$h][0] = 'fournisseurs.php?socid='.$object->id;
+	$head[$h][1] = $langs->trans("Suppliers");
+	$head[$h][2] = 'supplier';
 	$h++;
 
 	return $head;
@@ -2369,8 +2370,6 @@ function addMailingEventTypeSQL($actioncode, $objcon, $filterobj)
 	}
 }
 
-
-
 /**
  * Show footer of company in HTML pages
  *
@@ -2474,4 +2473,153 @@ function htmlPrintOnlineFooter($fromcompany, $langs, $addformmessage = 0, $suffi
 	print $line2;
 	print '</span>';
 	print '</footer>'."\n";
+}
+
+
+// PATCH ASSO
+/**
+ * 		Show html area for list of associations
+ *
+ *		@param	Conf		$conf		Object conf
+ * 		@param	Translate	$langs		Object langs
+ * 		@param	DoliDB		$db			Database handler
+ * 		@param	Societe		$object		Third party object
+ * 		@return	void
+ */
+function show_asso($conf,$langs,$db,$object)
+{
+	$sql = "SELECT a.rowid, a.login, a.lastname, a.firstname,a.datefin";
+	$sql.= " FROM ".MAIN_DB_PREFIX."adherent as a";
+	$sql.= " WHERE a.fk_asso = ".$object->id;
+	$sql.= " AND a.datefin >= NOW()";
+	$sql.= " ORDER BY a.lastname, a.firstname";
+	afficher_liste_parrains($sql, "Parrains à jour de cotisation", $db, $langs);
+
+	$sql = "SELECT a.rowid, a.login, a.lastname, a.firstname,a.datefin";
+	$sql.= " FROM ".MAIN_DB_PREFIX."adherent as a";
+	$sql.= " WHERE a.fk_asso = ".$object->id;
+	$sql.= " AND a.datefin < NOW()";
+	$sql.= " ORDER BY a.lastname, a.firstname";
+	afficher_liste_parrains($sql, "Parrains non à jour de cotisation", $db, $langs);
+}
+
+
+function afficher_liste_parrains($sql, $title, $db, $langs)
+{
+	$result = $db->query($sql);
+	$num = $db->num_rows($result);
+
+	if ($num)
+	{
+		$adhstatic = new Adherent($db);
+
+		print '<div class="fichecenter">';
+		print_titre($langs->trans($title) . ' (' . $num . ')');
+		print "\n".'<table class="noborder" width="100%">'."\n";
+
+		print '<tr class="liste_titre"><td>'.$langs->trans("Member").'</td></tr>';
+
+		for ($i=0; $i < $num; $i++)
+		{
+			$obj = $db->fetch_object($result);
+			$var = !$var;
+
+			print "<tr ".$bc[$var].">";
+
+			print '<td>';
+			$adhstatic->id = $obj->rowid;
+			$adhstatic->lastname = $obj->lastname;
+			$adhstatic->firstname = $obj->firstname;
+			$adhstatic->ref = $adhstatic->getFullName($langs);
+			print $adhstatic->getNomUrl(1).' '.($obj->login?"(".$obj->login.")":"");
+			print '</td>';
+
+			print "</tr>\n";
+		}
+		print "\n</table>\n";
+		print '</div>';
+	}
+
+	print "<br>\n";
+}
+
+
+// PATCH LIEN FOURNISSEURS
+/**
+ * 		Show html area for list of customers
+ *
+ *		@param	Conf		$conf		Object conf
+ * 		@param	Translate	$langs		Object langs
+ * 		@param	DoliDB		$db			Database handler
+ * 		@param	Societe		$object		Third party object
+ * 		@return	void
+ */
+function show_customers($conf,$langs,$db,$object)
+{
+	global $user;
+	global $bc;
+
+	$i=-1;
+
+	$sql = "SELECT s.rowid, s.nom as name, s.address, s.zip, s.town, s.code_client, s.canvas";
+	$sql .= " FROM ".MAIN_DB_PREFIX."societe as s";
+	$sql .= " , ".MAIN_DB_PREFIX."societe_fournisseurs as sf";
+	$sql .= " WHERE sf.fk_fournisseur =".$object->id;
+	$sql .= " AND sf.fk_soc = s.rowid";
+	$sql .= " ORDER BY s.nom ASC ";
+
+	$result = $db->query($sql);
+	$num = $db->num_rows($result);
+
+	if ($num)
+	{
+		$socstatic = new Societe($db);
+
+		print '<div class="fichecenter">';
+		print_titre($langs->trans("SupplierOf"));
+		print "\n".'<table class="noborder" width="100%">'."\n";
+
+		print '<tr class="liste_titre"><td>'.$langs->trans("Company").'</td>';
+		print '<td>'.$langs->trans("Address").'</td><td>'.$langs->trans("Zip").'</td>';
+		print '<td>'.$langs->trans("Town").'</td><td>'.$langs->trans("CustomerCode").'</td>';
+		print "<td>&nbsp;</td>";
+		print "</tr>";
+
+		$i=0;
+		$var=true;
+
+		while ($i < $num)
+		{
+			$obj = $db->fetch_object($result);
+			$var = !$var;
+
+			print "<tr ".$bc[$var].">";
+
+			print '<td>';
+			$socstatic->id = $obj->rowid;
+			$socstatic->name = $obj->name;
+			$socstatic->canvas = $obj->canvas;
+			print $socstatic->getNomUrl(1);
+			print '</td>';
+
+			print '<td>'.$obj->address.'</td>';
+			print '<td>'.$obj->zip.'</td>';
+			print '<td>'.$obj->town.'</td>';
+			print '<td>'.$obj->code_client.'</td>';
+
+			print '<td align="center">';
+			print '<a href="'.DOL_URL_ROOT.'/societe/soc.php?socid='.$obj->rowid.'&amp;action=edit">';
+			print img_edit();
+			print '</a></td>';
+
+			print "</tr>\n";
+			$i++;
+		}
+		print "\n</table>\n";
+		print '</div>';
+	}
+
+	print "<br>\n";
+
+	return $i;
 }

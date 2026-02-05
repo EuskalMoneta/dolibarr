@@ -1,0 +1,7 @@
+BoxEquipementTPE=Equipement des prestataires en TPE
+BoxTitleEquipementTPE=L'équipement des prestataires en TPE
+TotalPrestatairesEquipes=Nombre total de prestataires équipés
+NombreFamoco=Prestataires équipés avec un Famoco
+NombreSmartphone=Prestataires équipés avec leur smartphone
+NombrePbTechnique=Prestataires non équipés à cause d'un problème technique
+NombrePasNecessaire=Prestataires non équipés car ce n'est pas nécessaire

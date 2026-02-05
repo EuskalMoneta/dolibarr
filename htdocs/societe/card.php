@@ -84,6 +84,9 @@ if (isModEnabled('accounting')) {
 	$langs->load("products");
 }
 
+// PATCH LIEN FOURNISSEURS
+$langs->load("fournisseur");
+
 $error = 0; $errors = array();
 
 
@@ -3179,6 +3182,10 @@ if (is_object($objcanvas) && $objcanvas->displayCanvasExists($action)) {
 		// Sales representative
 		include DOL_DOCUMENT_ROOT.'/societe/tpl/linesalesrepresentative.tpl.php';
 
+		// PATCH LIEN FOURNISSEURS
+		// Suppliers
+		include DOL_DOCUMENT_ROOT.'/societe/tpl/linesuppliers.tpl.php';
+
 		// Module Adherent
 		if (isModEnabled('adherent')) {
 			$langs->load("members");
@@ -3317,6 +3324,10 @@ if (is_object($objcanvas) && $objcanvas->displayCanvasExists($action)) {
 
 			print '</div></div>';
 
+			// PATCH LIEN FOURNISSEURS
+			// Customers list
+			$result=show_customers($conf,$langs,$db,$object);
+
 			if (!empty($conf->global->MAIN_DUPLICATE_CONTACTS_TAB_ON_MAIN_CARD)) {
 				// Contacts list
 				if (empty($conf->global->SOCIETE_DISABLE_CONTACTS)) {
@@ -3324,6 +3335,10 @@ if (is_object($objcanvas) && $objcanvas->displayCanvasExists($action)) {
 				}
 			}
 		}
+
+		// PATCH ASSO
+		// Associations list
+		$result=show_asso($conf,$langs,$db,$object);
 
 		// Presend form
 		$modelmail = 'thirdparty';

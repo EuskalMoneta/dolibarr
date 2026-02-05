@@ -109,6 +109,10 @@ class Adherent extends CommonObject
 	public $civility_code;
 	public $civility;
 
+	// PATCH ASSO
+	public $fk_asso;
+	public $fk_asso2;
+
 	/**
 	 * @var string company name
 	 * @deprecated
@@ -844,6 +848,10 @@ class Adherent extends CommonObject
 		$sql .= ", morphy = '".$this->db->escape($this->morphy)."'";
 		$sql .= ", birth = ".($this->birth ? "'".$this->db->idate($this->birth)."'" : "null");
 
+		// PATCH ASSO
+		$sql .= ", fk_asso = ".($this->fk_asso > 0 ? $this->db->escape($this->fk_asso) : "null");
+		$sql .= ", fk_asso2 = ".($this->fk_asso2 > 0 ? $this->db->escape($this->fk_asso2) : "null");
+
 		if ($this->datefin) {
 			$sql .= ", datefin = '".$this->db->idate($this->datefin)."'"; // Must be modified only when deleting a subscription
 		}
@@ -1370,6 +1378,72 @@ class Adherent extends CommonObject
 	}
 
 
+	// PATCH ASSO
+	/**
+	 *    Set link to an association
+	 *
+	 *    @param     int	$assoid				Id of asso to link to
+	 *    @return    int						1=OK, -1=KO
+	 */
+	function setAssoId($assoid)
+	{
+		global $conf, $langs;
+
+		$this->db->begin();
+
+		// Update link to asso
+		$sql = "UPDATE ".MAIN_DB_PREFIX."adherent SET fk_asso = ".($assoid>0 ? $assoid : 'null');
+		$sql.= " WHERE rowid = ".$this->id;
+
+		dol_syslog(get_class($this)."::setAssoId sql=".$sql);
+		$resql = $this->db->query($sql);
+		if ($resql)
+		{
+			$this->db->commit();
+			return 1;
+		}
+		else
+		{
+			$this->error=$this->db->error();
+			dol_syslog(get_class($this)."::setAssoId ".$this->error, LOG_ERR);
+			$this->db->rollback();
+			return -1;
+		}
+	}
+
+	/**
+	 *    Set link to an association (2nd choice)
+	 *
+	 *    @param     int	$assoid				Id of asso to link to
+	 *    @return    int						1=OK, -1=KO
+	 */
+	function setAsso2Id($assoid)
+	{
+		global $conf, $langs;
+
+		$this->db->begin();
+
+		// Update link to asso
+		$sql = "UPDATE ".MAIN_DB_PREFIX."adherent SET fk_asso2 = ".($assoid>0 ? $assoid : 'null');
+		$sql.= " WHERE rowid = ".$this->id;
+
+		dol_syslog(get_class($this)."::setAsso2Id sql=".$sql);
+		$resql = $this->db->query($sql);
+		if ($resql)
+		{
+			$this->db->commit();
+			return 1;
+		}
+		else
+		{
+			$this->error=$this->db->error();
+			dol_syslog(get_class($this)."::setAsso2Id ".$this->error, LOG_ERR);
+			$this->db->rollback();
+			return -1;
+		}
+	}
+
+
 	// phpcs:disable PEAR.NamingConventions.ValidFunctionName.ScopeNotCamelCaps
 	/**
 	 *	Method to load member from its login
@@ -1458,6 +1532,8 @@ class Adherent extends CommonObject
 		$sql .= " dep.nom as state, dep.code_departement as state_code,";
 		$sql .= " t.libelle as type, t.subscription as subscription,";
 		$sql .= " u.rowid as user_id, u.login as user_login";
+		// PATCH ASSO
+		$sql .= ", d.fk_asso, d.fk_asso2";
 		$sql .= " FROM ".MAIN_DB_PREFIX."adherent_type as t, ".MAIN_DB_PREFIX."adherent as d";
 		$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."c_country as c ON d.country = c.rowid";
 		$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."c_departements as dep ON d.state_id = dep.rowid";
@@ -1555,6 +1631,10 @@ class Adherent extends CommonObject
 				$this->user_login = $obj->user_login;
 
 				$this->model_pdf = $obj->model_pdf;
+
+				// PATCH ASSO
+				$this->fk_asso = $obj->fk_asso;
+				$this->fk_asso2 = $obj->fk_asso2;
 
 				// Retrieve all extrafield
 				// fetch optionals attributes and labels

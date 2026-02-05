@@ -99,7 +99,8 @@ class box_members_subscriptions_by_year extends ModeleBoxes
 			$tot = 0;
 			$numb = 0;
 
-			$sql = "SELECT c.subscription, c.dateadh as dateh";
+			// PATCH STATISTIQUES Cotisations des adhérents par année (on prend la date de fin des cotisations)
+			$sql = "SELECT c.subscription, c.dateadh as dateh, c.datef";
 			$sql .= " FROM " . MAIN_DB_PREFIX . "adherent as d, " . MAIN_DB_PREFIX . "subscription as c";
 			$sql .= " WHERE d.entity IN (" . getEntity('adherent') . ")";
 			$sql .= " AND d.rowid = c.fk_adherent";
@@ -111,7 +112,8 @@ class box_members_subscriptions_by_year extends ModeleBoxes
 				$i = 0;
 				while ($i < $num) {
 					$objp = $this->db->fetch_object($result);
-					$year = dol_print_date($this->db->jdate($objp->dateh), "%Y");
+					// PATCH STATISTIQUES Cotisations des adhérents par année (on prend la date de fin des cotisations)
+					$year = dol_print_date($this->db->jdate($objp->datef), "%Y");
 					$Total[$year] = (isset($Total[$year]) ? $Total[$year] : 0) + $objp->subscription;
 					$Number[$year] = (isset($Number[$year]) ? $Number[$year] : 0) + 1;
 					$tot += $objp->subscription;
